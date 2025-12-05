@@ -1,0 +1,81 @@
+#######################
+# Maven
+#######################
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.flattened-pom.xml
+
+#######################
+# IDE - IntelliJ IDEA
+#######################
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+#######################
+# IDE - Eclipse
+#######################
+.classpath
+.project
+.settings/
+.metadata/
+bin/
+
+#######################
+# IDE - VS Code
+#######################
+.vscode/
+*.code-workspace
+
+#######################
+# Operating System
+#######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+#######################
+# Logs
+#######################
+*.log
+logs/
+
+#######################
+# Environment & Secrets
+#######################
+.env
+*.env
+.env.local
+.env.*.local
+application-secret.yml
+application-prod.yml
+*.key
+*.pem
+*.jks
+*.p12
+
+#######################
+# Docker
+#######################
+.dockerignore
+
+#######################
+# Build artifacts
+#######################
+*.jar
+*.war
+*.ear
+*.class
