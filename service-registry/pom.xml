@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<modelVersion>4.0.0</modelVersion>
+
+<!--
+    ================================================================
+    PARENT REFERENCE
+    ================================================================
+    Inherits all dependency versions from parent
+-->
+<parent>
+    <groupId>com.ticketblitz</groupId>
+    <artifactId>ticketblitz-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</parent>
+
+<artifactId>service-registry</artifactId>
+<name>Service Registry</name>
+<description>Netflix Eureka Server for Service Discovery</description>
+
+<!--
+    ================================================================
+    DEPENDENCIES
+    ================================================================
+-->
+<dependencies>
+    <!--
+        Spring Cloud Netflix Eureka Server
+
+        WHY: This single dependency gives us:
+        - Eureka Server implementation
+        - Service registry
+        - REST API for registration
+        - Web dashboard
+        - Health checking
+
+        Just add @EnableEurekaServer annotation and it works!
+    -->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
+    </dependency>
+
+    <!--
+        Spring Boot Actuator
+
+        WHY: Health checks, metrics, monitoring endpoints
+        Exposes:
+        - /actuator/health
+        - /actuator/metrics
+        - /actuator/info
+    -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!--
+        Spring Boot Test
+        (Already inherited from parent, but listed for clarity)
+    -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+
+<!--
+    ================================================================
+    BUILD CONFIGURATION
+    ================================================================
+    Spring Boot Maven Plugin makes this an executable JAR
+-->
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+            <configuration>
+                <!--
+                    Main class will be auto-detected
+                    Spring Boot finds the class with @SpringBootApplication
+                -->
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+</project>

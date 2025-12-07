@@ -1,0 +1,121 @@
+#==============================================================================
+# SERVICE REGISTRY (EUREKA SERVER) CONFIGURATION
+#==============================================================================
+
+# Application name (visible in Eureka dashboard)
+spring:
+  application:
+    name: service-registry
+
+#==============================================================================
+# SERVER CONFIGURATION
+#==============================================================================
+server:
+  port: 8761  # Standard Eureka port
+
+#==============================================================================
+# EUREKA SERVER CONFIGURATION
+#==============================================================================
+eureka:
+  instance:
+    hostname: localhost  # Hostname for this Eureka server
+
+  client:
+    # ========================================================================
+    # IMPORTANT: This is a Eureka SERVER, not a client
+    # We don't want it to register with itself or fetch registry
+    # ========================================================================
+    registerWithEureka: false  # Don't register this server as a client
+    fetchRegistry: false       # Don't try to fetch registry from other servers
+
+    # Service URL for clients to connect
+    serviceUrl:
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+
+  server:
+    # ========================================================================
+    # SELF-PRESERVATION MODE
+    # ========================================================================
+    # In production: true (prevents mass de-registration during network issues)
+    # In development: false (faster to see services come/go)
+    #
+    # What self-preservation does:
+    # - If many services stop sending heartbeats, Eureka assumes network issue
+    # - Doesn't remove services immediately
+    # - Waits for network to recover
+    #
+    # For demo/learning, we disable it for faster feedback
+    # ========================================================================
+    enableSelfPreservation: false
+
+    # How often to run eviction task (remove expired leases)
+    evictionIntervalTimerInMs: 10000  # 10 seconds (faster than default 60s)
+
+    # Response cache timeout
+    # Clients cache registry, this controls how often cache refreshes
+    responseCacheUpdateIntervalMs: 5000  # 5 seconds
+
+  # Dashboard configuration
+  dashboard:
+    enabled: true  # Enable Eureka web dashboard
+    path: /         # Dashboard accessible at http://localhost:8761/
+
+#==============================================================================
+# ACTUATOR ENDPOINTS
+#==============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+#==============================================================================
+# LOGGING CONFIGURATION
+#==============================================================================
+logging:
+  level:
+    # Log levels for different packages
+    com.netflix.eureka: INFO
+    com.netflix.discovery: INFO
+    com.ticketblitz.registry: DEBUG
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+#==============================================================================
+# NOTES FOR PRODUCTION
+#==============================================================================
+# In production, you would:
+#
+# 1. RUN MULTIPLE EUREKA SERVERS (High Availability)
+#    eureka:
+#      client:
+#        serviceUrl:
+#          defaultZone: http://eureka1:8761/eureka/,http://eureka2:8761/eureka/
+#
+# 2. ENABLE SELF-PRESERVATION
+#    eureka:
+#      server:
+#        enableSelfPreservation: true
+#
+# 3. USE PROPER HOSTNAMES (not localhost)
+#    eureka:
+#      instance:
+#        hostname: eureka.ticketblitz.com
+#
+# 4. ADD AUTHENTICATION
+#    spring:
+#      security:
+#        user:
+#          name: admin
+#          password: ${EUREKA_PASSWORD}
+#
+# 5. CONFIGURE PROPER TIMEOUTS
+#    eureka:
+#      server:
+#        evictionIntervalTimerInMs: 60000  # 1 minute
+#        renewalThresholdUpdateIntervalMs: 900000  # 15 minutes
+#==============================================================================
