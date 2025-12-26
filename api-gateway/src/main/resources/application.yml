@@ -1,0 +1,148 @@
+spring:
+  profiles:
+    active: dev
+
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            exposedHeaders:
+              - Authorization
+            maxAge: 3600
+
+    routes:
+      - id: catalog-service
+        uri: lb://CATALOG-SERVICE
+        predicates:
+          - Path=/api/events/**, /api/venues/**
+        filters:
+          - name: CircuitBreaker
+            args:
+              name: catalogCircuitBreaker
+              fallbackUri: forward:/fallback/catalog
+          - name: RequestRateLimiter
+            args:
+              redis-rate-limiter:
+                replenishRate: 20
+                burstCapacity: 10
+                requestedTokens: 1
+              key-resolver: "#{@ipKeyResolver}"
+
+
+      - id: booking-service
+        uri: lb://BOOKING-SERVICE
+        predicates:
+            - Path=/api/bookings/**
+        filters:
+            - AuthenticationFilter
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter:
+                  replenishRate: 10
+                  burstCapacity: 20
+                  requestedTokens: 1
+                key-resolver: "#{@userKeyResolver}"
+            - name: CircuitBreaker
+              args:
+                name: bookingCircuitBreaker
+                fallbackUri: forward:/fallback/booking
+
+      - id: fulfillment-service
+        uri: lb://FULFILLMENT-SERVICE
+        predicates:
+            - Path=/api/tickets/**
+        filters:
+            - AuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: fulfillmentCircuitBreaker
+                fallbackUri: forward:/fallback/ticket
+
+    discovery:
+      locator:
+        enabled: false
+        lower-case-service-id: true
+
+    httpclient:
+      connect-timeout: 5000
+      response-timeout: 10s
+      pool:
+        max-connections: 500
+        max-idle-time: 30s
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+    registerWithEureka: true
+    fetchRegistry: true
+  instance:
+    preferIpAddress: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 10s
+        failureRateThreshold: 50
+        eventConsumerBufferSize: 10
+    instances:
+      catalogCircuitBreaker:
+        baseConfig: default
+      bookingCircuitBreaker:
+        baseConfig: default
+        failureRateThreshold: 60
+      fulfillmentCircuitBreaker:
+        baseConfig: default
+
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 5s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.netflix.eureka: INFO
+    com.ticketblitz.gateway: DEBUG
+    reactor.netty: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+jwt:
+  secret: ${JWT_SECRET:ticketblitz-secret-key-change-in-production-min-256-bits-for-security}
+  access-token-expiration: 900000
+  refresh-token-expiration: 604800000
