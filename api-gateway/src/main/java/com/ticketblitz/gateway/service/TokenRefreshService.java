@@ -4,6 +4,7 @@ import com.ticketblitz.common.dto.ApiResponse;
 import com.ticketblitz.common.exception.BusinessException;
 import com.ticketblitz.gateway.exception.InvalidTokenException;
 import com.ticketblitz.gateway.exception.TokenRevokedException;
+import com.ticketblitz.gateway.model.RefreshResult;
 import com.ticketblitz.gateway.model.RefreshTokenResponse;
 import com.ticketblitz.gateway.model.TokenPair;
 import com.ticketblitz.gateway.repository.RefreshTokenRepository;
@@ -26,7 +27,7 @@ public class TokenRefreshService {
     private final TokenService tokenService;
     private final RefreshTokenRepository refreshTokenRepository;
 
-    public Mono<RefreshTokenResponse> refreshAccessToken(String refreshToken) {
+    public Mono<RefreshResult> refreshAccessToken(String refreshToken) {
         // validate refresh token
         if (!tokenService.validateRefreshToken(refreshToken)) {
             return Mono.error(new InvalidTokenException("Invalid or expired refresh token"));
@@ -71,10 +72,12 @@ public class TokenRefreshService {
                                                     .accessTokenExpiresIn(newTokenPair.getAccessTokenExpiresIn())
                                                     .tokenType(newTokenPair.getTokenType())
                                                     .build();
-                                            return Mono.just(refreshTokenResponse)
-                                                    .contextWrite(
-                                                            ctx -> ctx.put("refreshToken",
-                                                                    newTokenPair.getRefreshToken()));
+
+                                            RefreshResult result = RefreshResult.builder()
+                                                    .refreshTokenResponse(refreshTokenResponse)
+                                                    .refreshToken(newTokenPair.getRefreshToken())
+                                                    .build();
+                                            return Mono.just(result);
 
                                         });
                             });

@@ -2,7 +2,6 @@ package com.ticketblitz.gateway.advice;
 
 import com.ticketblitz.common.dto.ApiResponse;
 import com.ticketblitz.common.exception.AccountDisabledException;
-import com.ticketblitz.common.exception.BusinessException;
 import com.ticketblitz.common.exception.InvalidCredentialsException;
 import com.ticketblitz.gateway.exception.InvalidTokenException;
 import com.ticketblitz.gateway.exception.TokenRevokedException;

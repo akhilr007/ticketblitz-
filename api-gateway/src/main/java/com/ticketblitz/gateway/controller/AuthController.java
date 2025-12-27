@@ -40,22 +40,14 @@ public class AuthController {
         log.info("Login request received for: {}", request.getEmail());
 
         return authenticationService.authenticate(request)
-                .flatMap(loginResponse ->
-                    Mono.deferContextual(ctx -> {
-                        String refreshToken = ctx.get("refreshToken");
-
-                        ResponseCookie cookie = cookieUtil.createRefreshTokenCookie(
-                                refreshToken,
-                                Duration.ofDays(7)
-                        );
-
-                        response.addCookie(cookie);
-
-                        log.info("Login successful for: {}, refresh token set as httpOnly cookie", request.getEmail());
-
-                        return Mono.just(ResponseEntity.ok(ApiResponse.success(loginResponse)));
-                    })
-                );
+                .map(result -> {
+                    ResponseCookie cookie = cookieUtil.createRefreshTokenCookie(
+                            result.getRefreshToken(),
+                            Duration.ofDays(7)
+                    );
+                    response.addCookie(cookie);
+                    return ResponseEntity.ok(ApiResponse.success(result.getLoginResponse()));
+                });
     }
 
     @PostMapping("/refresh")
@@ -75,19 +67,14 @@ public class AuthController {
 
 
         return tokenRefreshService.refreshAccessToken(refreshToken)
-                .flatMap(responseBody ->
-                    Mono.deferContextual(ctx -> {
-                        String newRefreshToken = ctx.get("refreshToken");
-                        response.addCookie(
-                                cookieUtil.createRefreshTokenCookie(
-                                        newRefreshToken,
-                                        Duration.ofDays(7)
-                                )
-                        );
-
-                        return Mono.just(ResponseEntity.ok(ApiResponse.success(responseBody)));
-                    })
-                );
+                .map(result -> {
+                    ResponseCookie newCookie = cookieUtil.createRefreshTokenCookie(
+                            result.getRefreshToken(),
+                            Duration.ofDays(7)
+                    );
+                    response.addCookie(newCookie);
+                    return ResponseEntity.ok(ApiResponse.success(result.getRefreshTokenResponse()));
+                });
     }
 
     @PostMapping("/logout")

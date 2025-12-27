@@ -3,6 +3,7 @@ package com.ticketblitz.gateway.service;
 import com.ticketblitz.common.exception.AccountDisabledException;
 import com.ticketblitz.common.exception.BusinessException;
 import com.ticketblitz.common.exception.InvalidCredentialsException;
+import com.ticketblitz.gateway.model.AuthenticationResult;
 import com.ticketblitz.gateway.model.LoginRequest;
 import com.ticketblitz.gateway.model.LoginResponse;
 import com.ticketblitz.gateway.model.TokenPair;
@@ -25,7 +26,7 @@ public class AuthenticationService {
     private final TokenService tokenService;
     private final RefreshTokenRepository refreshTokenRepository;
 
-    public Mono<LoginResponse> authenticate(LoginRequest request) {
+    public Mono<AuthenticationResult> authenticate(LoginRequest request) {
         log.info("Authentication attempt for: {}", request.getEmail());
 
         return userRepository.findByEmail(request.getEmail())
@@ -68,8 +69,12 @@ public class AuthenticationService {
                                         .roles(user.getRoles())
                                         .build();
 
-                                return Mono.just(loginResponse)
-                                        .contextWrite(Context.of("refreshToken", tokenPair.getRefreshToken()));
+                                AuthenticationResult result = AuthenticationResult.builder()
+                                        .loginResponse(loginResponse)
+                                        .refreshToken(tokenPair.getRefreshToken())
+                                        .build();
+
+                                return Mono.just(result);
                             });
                 })
                 .switchIfEmpty(Mono.defer(() -> {
