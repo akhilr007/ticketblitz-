@@ -5,6 +5,7 @@ import com.ticketblitz.common.exception.AccountDisabledException;
 import com.ticketblitz.common.exception.InvalidCredentialsException;
 import com.ticketblitz.gateway.exception.InvalidTokenException;
 import com.ticketblitz.gateway.exception.TokenRevokedException;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,14 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("TOKEN_REVOKED", ex.getMessage()));
     }
 
+    @ExceptionHandler(RequestNotPermitted.class)
+    public ResponseEntity<ApiResponse<Void>> handleRateLimitException(RequestNotPermitted ex) {
+        log.warn("Too many requests: {}", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(ApiResponse.error("RATE_LIMIT_EXCEEDED", ex.getMessage()));
+    }
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException ex) {
         log.warn("Unexpected error: {}", ex.getMessage());

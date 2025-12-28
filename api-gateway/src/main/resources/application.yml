@@ -35,53 +35,53 @@ spring:
               - Authorization
             maxAge: 3600
 
-    routes:
-      - id: catalog-service
-        uri: lb://CATALOG-SERVICE
-        predicates:
-          - Path=/api/events/**, /api/venues/**
-        filters:
-          - name: CircuitBreaker
-            args:
-              name: catalogCircuitBreaker
-              fallbackUri: forward:/fallback/catalog
-          - name: RequestRateLimiter
-            args:
-              redis-rate-limiter:
-                replenishRate: 20
-                burstCapacity: 10
-                requestedTokens: 1
-              key-resolver: "#{@ipKeyResolver}"
-
-
-      - id: booking-service
-        uri: lb://BOOKING-SERVICE
-        predicates:
-            - Path=/api/bookings/**
-        filters:
-            - AuthenticationFilter
+      routes:
+        - id: catalog-service
+          uri: lb://CATALOG-SERVICE
+          predicates:
+            - Path=/api/events/**, /api/venues/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: catalogCircuitBreaker
+                fallbackUri: forward:/fallback/catalog
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter:
-                  replenishRate: 10
-                  burstCapacity: 20
+                  replenishRate: 20
+                  burstCapacity: 10
                   requestedTokens: 1
-                key-resolver: "#{@userKeyResolver}"
-            - name: CircuitBreaker
-              args:
-                name: bookingCircuitBreaker
-                fallbackUri: forward:/fallback/booking
+                key-resolver: "#{@ipKeyResolver}"
 
-      - id: fulfillment-service
-        uri: lb://FULFILLMENT-SERVICE
-        predicates:
-            - Path=/api/tickets/**
-        filters:
-            - AuthenticationFilter
-            - name: CircuitBreaker
-              args:
-                name: fulfillmentCircuitBreaker
-                fallbackUri: forward:/fallback/ticket
+
+        - id: booking-service
+          uri: lb://BOOKING-SERVICE
+          predicates:
+              - Path=/api/bookings/**
+          filters:
+              - AuthenticationFilter
+              - name: RequestRateLimiter
+                args:
+                  redis-rate-limiter:
+                    replenishRate: 10
+                    burstCapacity: 20
+                    requestedTokens: 1
+                  key-resolver: "#{@userKeyResolver}"
+              - name: CircuitBreaker
+                args:
+                  name: bookingCircuitBreaker
+                  fallbackUri: forward:/fallback/booking
+
+        - id: fulfillment-service
+          uri: lb://FULFILLMENT-SERVICE
+          predicates:
+              - Path=/api/tickets/**
+          filters:
+              - AuthenticationFilter
+              - name: CircuitBreaker
+                args:
+                  name: fulfillmentCircuitBreaker
+                  fallbackUri: forward:/fallback/ticket
 
     discovery:
       locator:

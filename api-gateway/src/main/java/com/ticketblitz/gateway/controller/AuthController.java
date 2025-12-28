@@ -8,6 +8,7 @@ import com.ticketblitz.gateway.service.AuthenticationService;
 import com.ticketblitz.gateway.service.LogoutService;
 import com.ticketblitz.gateway.service.TokenRefreshService;
 import com.ticketblitz.gateway.util.CookieUtil;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
