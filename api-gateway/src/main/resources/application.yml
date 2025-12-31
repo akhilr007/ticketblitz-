@@ -1,4 +1,15 @@
 spring:
+
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/ticketblitz_users
+    username: ${POSTGRES_USER:ticketblitz}
+    password: ${POSTGRES_PASSWORD:ticketblitz_password}
+  flyway:
+    url: jdbc:postgresql://localhost:5432/ticketblitz_users
+    user: ${POSTGRES_USER:ticketblitz}
+    password: ${POSTGRES_PASSWORD:ticketblitz_password}
+    enabled: true
+
   profiles:
     active: dev
 
@@ -139,8 +150,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,gateway
+        include: health,info,metrics,gateway,prometheus
   endpoint:
+    prometheus:
+      enabled: true
     health:
       show-details: always
     gateway:

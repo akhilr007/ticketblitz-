@@ -13,6 +13,8 @@ import com.ticketblitz.gateway.util.TokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -24,13 +26,18 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final TokenService tokenService;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
+    private boolean validatePassword(String rawPassword, String hashedPassword) {
+        return passwordEncoder.matches(rawPassword, hashedPassword);
+    }
 
     public Mono<AuthenticationResult> authenticate(LoginRequest request) {
         log.info("Authentication attempt for: {}", request.getEmail());
 
         return userRepository.findByEmail(request.getEmail())
                 .flatMap(user -> {
-                    if (!userRepository.validatePassword(
+                    if (!validatePassword(
                             request.getPassword(),
                             user.getPasswordHash())
                     ) {

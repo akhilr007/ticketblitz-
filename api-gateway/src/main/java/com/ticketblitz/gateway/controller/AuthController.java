@@ -1,11 +1,10 @@
 package com.ticketblitz.gateway.controller;
 
 import com.ticketblitz.common.dto.ApiResponse;
-import com.ticketblitz.gateway.model.LoginRequest;
-import com.ticketblitz.gateway.model.LoginResponse;
-import com.ticketblitz.gateway.model.RefreshTokenResponse;
+import com.ticketblitz.gateway.model.*;
 import com.ticketblitz.gateway.service.AuthenticationService;
 import com.ticketblitz.gateway.service.LogoutService;
+import com.ticketblitz.gateway.service.RegisterService;
 import com.ticketblitz.gateway.service.TokenRefreshService;
 import com.ticketblitz.gateway.util.CookieUtil;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
@@ -32,6 +31,16 @@ public class AuthController {
     private final LogoutService logoutService;
     private final TokenRefreshService tokenRefreshService;
     private final CookieUtil cookieUtil;
+    private final RegisterService registerService;
+
+    @PostMapping("/register")
+    public Mono<ResponseEntity<ApiResponse<RegisterResponse>>> register(
+            @Valid @RequestBody RegisterRequest request) {
+        return registerService.register(request)
+                .map(registerResponse -> {
+                    return ResponseEntity.ok(ApiResponse.success(registerResponse));
+                });
+    }
 
     @PostMapping("/login")
     public Mono<ResponseEntity<ApiResponse<LoginResponse>>> login(
