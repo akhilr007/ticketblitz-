@@ -96,6 +96,11 @@
         <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
     </dependency>
 
+    <dependency>
+        <groupId>com.github.ben-manes.caffeine</groupId>
+        <artifactId>caffeine</artifactId>
+    </dependency>
+
     <!-- Testing -->
     <dependency>
         <groupId>org.springframework.boot</groupId>
