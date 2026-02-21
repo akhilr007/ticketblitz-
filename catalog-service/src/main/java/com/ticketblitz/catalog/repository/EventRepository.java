@@ -73,7 +73,7 @@ public interface EventRepository extends
      * Find events by category (with pagination)
      */
     @Query("SELECT e from Event e " +
-            "WHERE e.category = :category " +
+            "WHERE e.eventCategory = :category " +
             "AND e.status = 'ACTIVE' " +
             "ORDER BY e.eventDate ASC")
     @QueryHints(@QueryHint(name="org.hibernate.readOnly", value = "true"))

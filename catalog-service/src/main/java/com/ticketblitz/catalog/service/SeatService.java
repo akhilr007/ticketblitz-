@@ -55,7 +55,8 @@ public class SeatService {
      */
     @Cacheable(
             value = CacheConfig.SEAT_AVAILABILITY_CACHE,
-            key = "'event:' + #eventId"
+            key = "'event:' + #eventId",
+            cacheManager = "redisCacheManager"
     )
     public List<SeatDto> getSeatsByEvent(Long eventId) {
         log.debug("Fetching all seats for event: {}", eventId);
@@ -72,7 +73,8 @@ public class SeatService {
      */
     @Cacheable(
             value = CacheConfig.SEAT_AVAILABILITY_CACHE,
-            key = "'event:' + #eventId + ':available'"
+            key = "'event:' + #eventId + ':available'",
+            cacheManager = "redisCacheManager"
     )
     public List<SeatDto> getAvailableSeats(Long eventId) {
         log.debug("Fetching available seats for event: {}", eventId);
@@ -86,7 +88,8 @@ public class SeatService {
      */
     @Cacheable(
             value = CacheConfig.SEAT_AVAILABILITY_CACHE,
-            key = "'event:' + #eventId + ':section:' + #section"
+            key = "'event:' + #eventId + ':section:' + #section",
+            cacheManager = "redisCacheManager"
     )
     public List<SeatDto> getSeatsBySection(Long eventId, String section) {
         log.debug("Fetching seats for event: {}, section: {}", eventId, section);
@@ -102,7 +105,8 @@ public class SeatService {
      */
     @Cacheable(
             value = CacheConfig.SEAT_AVAILABILITY_CACHE,
-            key = "'event:' + #eventId + ':seatmap'"
+            key = "'event:' + #eventId + ':seatmap'",
+            cacheManager = "redisCacheManager"
     )
     public Map<String, List<SeatDto>> getSeatMap(Long eventId) {
         log.debug("Building seat map for event: {}", eventId);
@@ -129,7 +133,8 @@ public class SeatService {
      */
     @Cacheable(
             value = CacheConfig.SEAT_AVAILABILITY_CACHE,
-            key = "'event:' + #eventId + ':sections'"
+            key = "'event:' + #eventId + ':sections'",
+            cacheManager = "redisCacheManager"
     )
     public List<String> getSections(Long eventId) {
         log.debug("Fetching sections for event: {}", eventId);

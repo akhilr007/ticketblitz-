@@ -36,7 +36,7 @@ public class Event {
     private LocalDateTime eventEndDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @Column(name = "category", nullable = false, length = 50)
     private EventCategory eventCategory;
 
     @Column(name = "total_seats", nullable = false)
