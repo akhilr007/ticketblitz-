@@ -15,4 +15,4 @@ GRANT ALL PRIVILEGES ON DATABASE ticketblitz TO ticketblitz;
 GRANT ALL PRIVILEGES ON DATABASE ticketblitz_catalog TO ticketblitz;
 GRANT ALL PRIVILEGES ON DATABASE ticketblitz_booking TO ticketblitz;
 GRANT ALL PRIVILEGES ON DATABASE ticketblitz_fulfillment TO ticketblitz;
-GRANT ALL PRIVILEGES ON DATABASE ticketblitz TO ticketblitz_users;
+GRANT ALL PRIVILEGES ON DATABASE ticketblitz_users TO ticketblitz;

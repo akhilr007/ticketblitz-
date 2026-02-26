@@ -4,6 +4,6 @@ echo "🛑 Stopping TicketBlitz Infrastructure..."
 
 cd ../docker || exit 1
 
-docker compose down -v
+docker compose down
 
 echo "✅ Infrastructure stopped!"

@@ -20,7 +20,7 @@
         <module>common</module>
         <module>service-registry</module>
         <module>api-gateway</module>
-<!--        <module>catalog-service</module>-->
+        <module>catalog-service</module>
 <!--        <module>booking-service</module>-->
 <!--        <module>fulfillment-service</module>-->
     </modules>
