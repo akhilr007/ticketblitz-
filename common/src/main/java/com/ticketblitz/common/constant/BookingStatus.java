@@ -1,8 +1,20 @@
 package com.ticketblitz.common.constant;
 
+/**
+ * BOOKING LIFECYCLE
+ *
+ * PENDING -> User reserved seats, payment not started
+ * RESERVED -> Payment processing started
+ * CONFIRMED -> Payment successful, booking complete
+ * CANCELLED -> User cancelled or timeout
+ * FAILED -> Payment failed
+ *
+ * @author Akhil
+ */
 public enum BookingStatus {
     PENDING,
+    RESERVED,
     CONFIRMED,
-    EXPIRED,
-    CANCELLED
+    CANCELLED,
+    FAILED
 }
