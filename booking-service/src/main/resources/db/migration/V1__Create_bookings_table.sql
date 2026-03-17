@@ -78,7 +78,8 @@ CREATE TABLE IF NOT EXISTS payments (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
 
-    UNIQUE(payment_gateway, gateway_transaction_id)
+    UNIQUE(payment_gateway, gateway_transaction_id),
+    UNIQUE(booking_id, payment_gateway)
 );
 
 CREATE INDEX idx_payments_booking ON payments(booking_id);
