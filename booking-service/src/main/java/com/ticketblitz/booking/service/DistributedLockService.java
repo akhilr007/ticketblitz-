@@ -11,7 +11,7 @@ import java.util.function.Supplier;
 
 
 /**
- * Distributed Lock Service - STAFF ENGINEER PATTERN
+ * Distributed Lock Service
  *
  * DESIGN PATTERN: Facade Pattern
  * ===============================
