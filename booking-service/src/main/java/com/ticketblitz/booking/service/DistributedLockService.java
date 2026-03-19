@@ -9,6 +9,56 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+
+/**
+ * Distributed Lock Service - STAFF ENGINEER PATTERN
+ *
+ * DESIGN PATTERN: Facade Pattern
+ * ===============================
+ * Provides simple interface over complex Redisson API
+ * Centralizes lock management and error handling
+ *
+ * LOCK TYPES:
+ * ===========
+ * 1. Fair Lock: FIFO ordering (first-come-first-served)
+ * 2. Regular Lock: Non-fair (faster but no ordering)
+ * 3. Try Lock: Timeout-based attempt
+ *
+ * USAGE PATTERNS:
+ * ===============
+ *
+ * Pattern 1: Execute with Lock (auto-release)
+ * -------------------------------------------
+ * lockService.executeWithLock("seat:123", () -> {
+ *     // Critical section
+ *     bookSeat();
+ *     return true;
+ * });
+ *
+ * Pattern 2: Manual Lock/Unlock
+ * ------------------------------
+ * RLock lock = lockService.getLock("seat:123");
+ * try {
+ *     lock.lock(10, TimeUnit.SECONDS);
+ *     // Critical section
+ * } finally {
+ *     lock.unlock();
+ * }
+ *
+ * LOCK KEYS CONVENTION:
+ * =====================
+ * - "seat:{eventId}:{seatId}" - Individual seat
+ * - "booking:{bookingId}" - Booking operation
+ * - "event:{eventId}" - Event-level lock
+ *
+ * ERROR HANDLING:
+ * ===============
+ * - LockAcquisitionException: Failed to acquire lock
+ * - InterruptedException: Thread interrupted while waiting
+ * - Always unlock in finally block
+ *
+ * @author Akhil
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
