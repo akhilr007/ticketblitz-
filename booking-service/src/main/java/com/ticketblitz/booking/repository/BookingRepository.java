@@ -134,5 +134,4 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     FROM Booking b
     """)
     BookingStatsDto getBookingStatistics();
-cd
 }
