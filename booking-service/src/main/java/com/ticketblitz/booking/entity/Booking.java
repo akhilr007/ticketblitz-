@@ -134,9 +134,9 @@ public class Booking {
         this.cancelledAt = LocalDateTime.now();
     }
 
-    public void reserve() {
-        this.status = BookingStatus.RESERVED;
-    }
+//    public void reserve() {
+//        this.status = BookingStatus.RESERVED;
+//    }
 
     public void fail() {
         this.status = BookingStatus.FAILED;

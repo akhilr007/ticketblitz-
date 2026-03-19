@@ -1,5 +1,6 @@
 package com.ticketblitz.booking.repository;
 
+import com.ticketblitz.booking.dto.BookingStatsDto;
 import com.ticketblitz.booking.entity.Booking;
 import com.ticketblitz.common.constant.BookingStatus;
 import jakarta.persistence.LockModeType;
@@ -122,13 +123,16 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     /**
      * Get booking statistics (for admin dashboard)
      */
-    @Query("SELECT " +
-            "COUNT(b), " +
-            "SUM(CASE WHEN b.status = 'CONFIRMED' THEN 1 ELSE 0 END), " +
-            "SUM(CASE WHEN b.status = 'PENDING' THEN 1 ELSE 0 END), " +
-            "SUM(CASE WHEN b.status = 'CANCELLED' THEN 1 ELSE 0 END), " +
-            "SUM(CASE WHEN b.status = 'CONFIRMED' THEN b.totalAmount ELSE 0 END) " +
-            "FROM Booking b")
-    Object[] getBookingStatistics();
-
+    @Query("""
+    SELECT new com.ticketblitz.booking.dto.BookingStatsDto(
+           COUNT(b),
+           COALESCE(SUM(CASE WHEN b.status = com.ticketblitz.common.constant.BookingStatus.CONFIRMED THEN 1 ELSE 0 END), 0),
+           COALESCE(SUM(CASE WHEN b.status = com.ticketblitz.common.constant.BookingStatus.PENDING THEN 1 ELSE 0 END), 0),
+           COALESCE(SUM(CASE WHEN b.status = com.ticketblitz.common.constant.BookingStatus.CANCELLED THEN 1 ELSE 0 END), 0),
+           COALESCE(SUM(CASE WHEN b.status = com.ticketblitz.common.constant.BookingStatus.CONFIRMED THEN b.amount ELSE 0 END), 0)
+    )
+    FROM Booking b
+    """)
+    BookingStatsDto getBookingStatistics();
+cd
 }
