@@ -25,4 +25,32 @@ public class CatalogServiceFallback implements CatalogServiceClient {
         return ApiResponse.error(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
                 "Seat info unavailable");
     }
+
+    @Override
+    public ApiResponse<List<SeatInfo>> getSeatsByIds(Long eventId, List<Long> seatIds) {
+        log.error("Fallback triggered for getSeatsByIds: {} - {}", eventId, seatIds);
+        return ApiResponse.error(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+                "Seat info unavailable");
+    }
+
+    @Override
+    public ApiResponse<List<SeatInfo>> lockSeats(Long eventId, SeatOperationRequest request) {
+        log.error("Fallback triggered for lockSeats: {} - {}", eventId, request.seatIds());
+        return ApiResponse.error(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+                "Seat locking unavailable");
+    }
+
+    @Override
+    public ApiResponse<List<SeatInfo>> bookSeats(Long eventId, SeatOperationRequest request) {
+        log.error("Fallback triggered for bookSeats: {} - {}", eventId, request.seatIds());
+        return ApiResponse.error(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+                "Seat booking unavailable");
+    }
+
+    @Override
+    public ApiResponse<List<SeatInfo>> releaseSeats(Long eventId, SeatOperationRequest request) {
+        log.error("Fallback triggered for releaseSeats: {} - {}", eventId, request.seatIds());
+        return ApiResponse.error(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+                "Seat release unavailable");
+    }
 }
