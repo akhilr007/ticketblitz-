@@ -1,12 +1,18 @@
 package com.ticketblitz.catalog.advice;
 
 import com.ticketblitz.common.dto.ApiResponse;
+import com.ticketblitz.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Global Exception Handler
@@ -27,27 +33,17 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 public class GlobalExceptionHandler {
 
     /**
-     * Handle generic RuntimeException
+     * Handle application business exceptions
      */
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiResponse<Void>> handleRuntimeException(
-            RuntimeException ex) {
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusinessException(
+            BusinessException ex) {
 
-        log.error("Runtime exception occurred: {}", ex.getMessage(), ex);
-
-        // Check if it's a "not found" message
-        if (ex.getMessage() != null &&
-                (ex.getMessage().contains("not found") ||
-                        ex.getMessage().contains("Not found"))) {
-            return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
-                    .body(ApiResponse.error(HttpStatus.NOT_FOUND.toString(), ex.getMessage()));
-        }
+        log.warn("Business exception occurred: {}", ex.getMessage(), ex);
 
         return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.toString(),
-                        "An unexpected error occurred"));
+                .status(ex.getHttpStatus())
+                .body(ApiResponse.error(ex.getErrorCode(), ex.getMessage()));
     }
 
     /**
@@ -62,6 +58,37 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(HttpStatus.BAD_REQUEST.toString(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalStateException(
+            IllegalStateException ex) {
+
+        log.error("Invalid state: {}", ex.getMessage(), ex);
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(HttpStatus.CONFLICT.toString(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Void>> handleValidationException(
+            MethodArgumentNotValidException ex) {
+
+        Map<String, String> details = new HashMap<>();
+        for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
+            details.put(fieldError.getField(), fieldError.getDefaultMessage());
+        }
+
+        ApiResponse<Void> response = ApiResponse.error(
+                HttpStatus.BAD_REQUEST.toString(),
+                "Validation failed"
+        );
+        response.getError().setDetails(details);
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(response);
     }
 
     /**
