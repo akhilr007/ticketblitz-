@@ -1,9 +1,9 @@
 package com.ticketblitz.booking.dto;
 
-import com.esotericsoftware.kryo.serializers.FieldSerializer;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.hibernate.validator.constraints.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,6 +26,6 @@ public class CreateBookingRequest implements Serializable {
     private List<Long> seatIds;
 
     @NotNull(message = "Idempotency key is required")
-    @Size(min = 36, max = 36, message = "Idempotency key must be UUID")
+    @UUID(message = "Idempotency key must be a valid UUID")
     private String idempotencyKey;
 }
