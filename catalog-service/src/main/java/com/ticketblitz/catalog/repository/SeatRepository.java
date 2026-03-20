@@ -1,7 +1,9 @@
 package com.ticketblitz.catalog.repository;
 
 import com.ticketblitz.catalog.entity.Seat;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
@@ -51,6 +53,26 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
             "ORDER BY s.section, s.rowLabel, s.seatNumber")
     @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
     List<Seat> findByEventId(@Param("eventId") Long eventId);
+
+    @Query("SELECT s FROM Seat s " +
+            "WHERE s.eventId = :eventId " +
+            "AND s.id IN :seatIds " +
+            "ORDER BY s.section, s.rowLabel, s.seatNumber")
+    @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
+    List<Seat> findByEventIdAndIdIn(
+            @Param("eventId") Long eventId,
+            @Param("seatIds") List<Long> seatIds
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Seat s " +
+            "WHERE s.eventId = :eventId " +
+            "AND s.id IN :seatIds " +
+            "ORDER BY s.id")
+    List<Seat> findByEventIdAndIdInForUpdate(
+            @Param("eventId") Long eventId,
+            @Param("seatIds") List<Long> seatIds
+    );
 
     /**
      * Find seats by section
