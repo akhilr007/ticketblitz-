@@ -1,9 +1,11 @@
 package com.ticketblitz.catalog.repository;
 
 import com.ticketblitz.catalog.entity.Event;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -55,13 +57,16 @@ public interface EventRepository extends
     @QueryHints(@QueryHint(name="org.hibernate.readOnly", value = "true"))
     Optional<Event> findByIdWithVenue(@Param("id") Long id);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT e FROM Event e WHERE e.id = :id")
+    Optional<Event> findByIdForUpdate(@Param("id") Long id);
+
     /**
      * Find upcoming events (read only optimization)
      */
     @Query("SELECT e FROM Event e " +
             "WHERE e.eventDate >= :now " +
-            "AND e.status = 'ACTIVE' " +
-            "ORDER BY e.eventDate ASC ")
+            "AND e.status = 'ACTIVE'")
     @QueryHints(@QueryHint(name="org.hibernate.readOnly", value = "true"))
     Page<Event> findUpcomingEvents(
             @Param("now")LocalDateTime now,
@@ -74,8 +79,7 @@ public interface EventRepository extends
      */
     @Query("SELECT e from Event e " +
             "WHERE e.eventCategory = :category " +
-            "AND e.status = 'ACTIVE' " +
-            "ORDER BY e.eventDate ASC")
+            "AND e.status = 'ACTIVE'")
     @QueryHints(@QueryHint(name="org.hibernate.readOnly", value = "true"))
     Page<Event> findByCategory(
             @Param("category") Event.EventCategory category,
@@ -87,8 +91,7 @@ public interface EventRepository extends
      */
     @Query("SELECT e FROM Event e " +
             "WHERE e.venue.id = :venueId " +
-            "AND e.status = 'ACTIVE' " +
-            "ORDER BY e.eventDate ASC")
+            "AND e.status = 'ACTIVE'")
     @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
     Page<Event> findByVenueId(
             @Param("venueId") Long venueId,
@@ -100,8 +103,7 @@ public interface EventRepository extends
      */
     @Query("SELECT e from Event e " +
             "WHERE LOWER(e.name) LIKE LOWER(CONCAT('%', :searchTerm, '%')) " +
-            "AND e.status = 'ACTIVE' " +
-            "ORDER BY e.eventDate ASC")
+            "AND e.status = 'ACTIVE'")
     @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
     Page<Event> searchByName(
             @Param("searchTerm") String searchTerm,
@@ -113,8 +115,7 @@ public interface EventRepository extends
      */
     @Query("SELECT e from Event e " +
             "WHERE e.eventDate BETWEEN :startDate AND :endDate " +
-            "AND e.status = 'ACTIVE' " +
-            "ORDER BY e.eventDate ASC")
+            "AND e.status = 'ACTIVE'")
     @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
     Page<Event> findByDateRange(
             @Param("startDate") LocalDateTime startDate,
@@ -128,8 +129,7 @@ public interface EventRepository extends
     @Query("SELECT e FROM Event e " +
             "JOIN e.venue v " +
             "WHERE v.city = :city " +
-            "AND e.status = 'ACTIVE' " +
-            "ORDER BY e.eventDate ASC")
+            "AND e.status = 'ACTIVE'")
     @QueryHints(@QueryHint(name = "org.hibernate.readOnly", value = "true"))
     Page<Event> findByCity(
             @Param("city") String city,
