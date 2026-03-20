@@ -44,6 +44,7 @@ import java.util.List;
 @Mapper(
         componentModel = "spring",
         uses = {VenueMapper.class},
+        builder = @Builder(disableBuilder = true),
         unmappedTargetPolicy = ReportingPolicy.IGNORE,
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
 )
@@ -55,6 +56,8 @@ public interface EventMapper {
      * - Same field names
      * - Nested objects (venue → venueDto via VenueMapper)
      */
+    @Mapping(source = "eventCategory", target = "category")
+    @Mapping(source = "price", target = "basePrice")
     EventDto toDto(Event event);
 
     /**
@@ -63,6 +66,8 @@ public interface EventMapper {
      * - venue.name -> venueName (flatten nested object)
      * - venue.city -> venueCity
      */
+    @Mapping(source = "eventCategory", target = "category")
+    @Mapping(source = "price", target = "basePrice")
     @Mapping(source="venue.name", target="venueName")
     @Mapping(source="venue.city", target="venueCity")
     EventListDto toListDto(Event event);
@@ -84,8 +89,8 @@ public interface EventMapper {
      */
     @AfterMapping
     default void calculateComputedFields(
-            @MappingTarget EventDto dto,
-            Event event
+            Event event,
+            @MappingTarget EventDto dto
     ) {
         // calculate booked seats
         int bookedSeats = event.getTotalSeats() - event.getAvailableSeats();
