@@ -6,58 +6,17 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-
 /**
- * Distributed Lock Service
+ * Distributed lock facade over Redisson.
  *
- * DESIGN PATTERN: Facade Pattern
- * ===============================
- * Provides simple interface over complex Redisson API
- * Centralizes lock management and error handling
- *
- * LOCK TYPES:
- * ===========
- * 1. Fair Lock: FIFO ordering (first-come-first-served)
- * 2. Regular Lock: Non-fair (faster but no ordering)
- * 3. Try Lock: Timeout-based attempt
- *
- * USAGE PATTERNS:
- * ===============
- *
- * Pattern 1: Execute with Lock (auto-release)
- * -------------------------------------------
- * lockService.executeWithLock("seat:123", () -> {
- *     // Critical section
- *     bookSeat();
- *     return true;
- * });
- *
- * Pattern 2: Manual Lock/Unlock
- * ------------------------------
- * RLock lock = lockService.getLock("seat:123");
- * try {
- *     lock.lock(10, TimeUnit.SECONDS);
- *     // Critical section
- * } finally {
- *     lock.unlock();
- * }
- *
- * LOCK KEYS CONVENTION:
- * =====================
- * - "seat:{eventId}:{seatId}" - Individual seat
- * - "booking:{bookingId}" - Booking operation
- * - "event:{eventId}" - Event-level lock
- *
- * ERROR HANDLING:
- * ===============
- * - LockAcquisitionException: Failed to acquire lock
- * - InterruptedException: Thread interrupted while waiting
- * - Always unlock in finally block
- *
- * @author Akhil
+ * Multi-lock acquisition is ordered deterministically to avoid deadlocks and
+ * always releases every lock it successfully acquired.
  */
 @Slf4j
 @Service
@@ -66,65 +25,70 @@ public class DistributedLockService {
 
     private final RedissonClient redissonClient;
 
-    // LOCK CONFIGURATION
-    private static final long DEFAULT_WAIT_TIME = 10; // wait upto 10 seconds
-    private static final long DEFAULT_LEASE_TIME = 30; // hold lock for max 30 seconds
+    private static final long DEFAULT_WAIT_TIME = 10;
+    private static final long DEFAULT_LEASE_TIME = 30;
     private static final TimeUnit TIME_UNIT = TimeUnit.SECONDS;
 
-    /**
-     * Get a fair lock (FIFO Ordering)
-     *
-     * USE CASE: Seat booking (ensure fairness)
-     */
     public RLock getFairLock(String lockKey) {
         log.debug("Creating fair lock: {}", lockKey);
         return redissonClient.getFairLock(lockKey);
     }
 
-    /**
-     * Get a regular lock (faster, no ordering)
-     *
-     * USE CASE: General purpose locks
-     */
     public RLock getLock(String lockKey) {
         log.debug("Creating lock: {}", lockKey);
-        return  redissonClient.getLock(lockKey);
+        return redissonClient.getLock(lockKey);
     }
 
-    /**
-     * execute code with fair lock (auto-release)
-     *
-     * pattern: template method
-     * handles lock acquisition and release automatically
-     *
-     * @param lockKey Lock identifier
-     * @param action code to execute within lock
-     * @return result from action
-     * @throws LockAcquisitionException if lock cannot be acquired
-     */
     public <T> T executeWithFairLock(String lockKey, Supplier<T> action) {
-        RLock lock = getFairLock(lockKey);
-        return executeWithLock(lock, lockKey, action);
+        return executeWithLock(getFairLock(lockKey), lockKey, action);
     }
 
-    /*
-        execute code with regular lock (auto release)
-     */
     public <T> T executeWithLock(String lockKey, Supplier<T> action) {
-        RLock lock = getLock(lockKey);
-        return executeWithLock(lock, lockKey, action);
+        return executeWithLock(getLock(lockKey), lockKey, action);
     }
 
-    /*
-        core lock execution logic
-     */
-    public <T> T executeWithLock(RLock lock, String lockKey, Supplier<T> action) {
+    public <T> T executeWithLocks(List<String> lockKeys, Supplier<T> action) {
+        List<String> normalizedLockKeys = lockKeys == null
+                ? List.of()
+                : lockKeys.stream().distinct().sorted(Comparator.naturalOrder()).toList();
+
+        if (normalizedLockKeys.isEmpty()) {
+            return action.get();
+        }
+
+        List<RLock> acquiredLocks = new ArrayList<>(normalizedLockKeys.size());
+        try {
+            for (String lockKey : normalizedLockKeys) {
+                RLock lock = getLock(lockKey);
+                acquireLock(lock, lockKey);
+                acquiredLocks.add(lock);
+            }
+
+            return action.get();
+        } finally {
+            releaseLocks(acquiredLocks, normalizedLockKeys);
+        }
+    }
+
+    private <T> T executeWithLock(RLock lock, String lockKey, Supplier<T> action) {
         boolean acquired = false;
 
         try {
-            // try to acquire lock with timeout
+            acquireLock(lock, lockKey);
+            acquired = true;
+            return action.get();
+        } finally {
+            if (acquired && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+                log.debug("Lock released: {} by thread {}", lockKey, Thread.currentThread().getName());
+            }
+        }
+    }
+
+    private void acquireLock(RLock lock, String lockKey) {
+        try {
             log.debug("Attempting to acquire lock: {}", lockKey);
-            acquired = lock.tryLock(DEFAULT_WAIT_TIME, DEFAULT_LEASE_TIME, TIME_UNIT);
+            boolean acquired = lock.tryLock(DEFAULT_WAIT_TIME, DEFAULT_LEASE_TIME, TIME_UNIT);
 
             if (!acquired) {
                 log.warn("Failed to acquire lock: {} (timeout after {}s)", lockKey, DEFAULT_WAIT_TIME);
@@ -134,58 +98,33 @@ public class DistributedLockService {
                 );
             }
 
-
             log.debug("Lock acquired: {} by thread {}", lockKey, Thread.currentThread().getName());
-
-            // execute critical section
-            return action.get();
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("Thread interrupted while waiting for lock: {}", lockKey, e);
             throw new LockAcquisitionException(
-                    "Thread interrupted while acquiring lock: " + lockKey, e
+                    "Thread interrupted while acquiring lock: " + lockKey,
+                    e
             );
         }
-        finally {
-            if (acquired && lock.isHeldByCurrentThread()) {
+    }
+
+    private void releaseLocks(List<RLock> acquiredLocks, List<String> normalizedLockKeys) {
+        for (int index = acquiredLocks.size() - 1; index >= 0; index--) {
+            RLock lock = acquiredLocks.get(index);
+            if (lock.isHeldByCurrentThread()) {
                 lock.unlock();
-                log.debug("Lock released: {} by thread {}", lockKey, Thread.currentThread().getName());
+                log.debug("Lock released: {} by thread {}",
+                        normalizedLockKeys.get(index),
+                        Thread.currentThread().getName());
             }
         }
     }
 
-    /**
-     *  Try to acquire lock without waiting
-        @return true if lock acquired, false otherwise
-     */
-    public boolean tryLock(String lockKey) {
-        RLock lock = getLock(lockKey);
-        boolean acquired = lock.tryLock();
-
-        if (acquired) {
-            log.debug("Lock acquired immediately: {}", lockKey);
-        }
-        else {
-            log.debug("Lock already held: {}", lockKey);
-        }
-
-        return acquired;
-    }
-
-    /**
-     * check if lock is currently held
-     */
     public boolean isLocked(String lockKey) {
-        RLock lock = getLock(lockKey);
-        return lock.isLocked();
+        return getLock(lockKey).isLocked();
     }
 
-    /**
-     * Force unlock, (use with caution)
-     *
-     * only used in admin/cleanup scenarios
-     */
     public void forceUnlock(String lockKey) {
         RLock lock = getLock(lockKey);
         if (lock.isLocked()) {
@@ -194,9 +133,6 @@ public class DistributedLockService {
         }
     }
 
-    /**
-     * Custom exception for lock acquisition failures
-     */
     public static class LockAcquisitionException extends RuntimeException {
         public LockAcquisitionException(String message) {
             super(message);
