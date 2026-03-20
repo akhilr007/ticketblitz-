@@ -44,7 +44,7 @@ import java.util.List;
  * Servic layer = transaction boundary
  * @Transactional(readOnly=true) optimization:
  * - Disable dirty checking
- * - No flust to database
+ * - No flush to database
  * - Faster query execution
  *
  * @author Akhil
@@ -89,7 +89,7 @@ public class EventService {
      */
     @Cacheable(
             value = CacheConfig.EVENT_LIST_CACHE,
-            key = "'upcoming:' + #pageable.pageNumber + ':' + #pageable.pageSize"
+            key = "'upcoming:' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort"
     )
     public PageResponse<EventListDto> getUpcomingEvents(Pageable pageable) {
         log.debug("Fetching upcoming events: page={}, size={}",
@@ -109,8 +109,8 @@ public class EventService {
     @Cacheable(
             value = CacheConfig.EVENT_LIST_CACHE,
             key = "'search:' + #category + ':' + #status + ':' + #city + ':' + " +
-                    "#searchTerm + ':' + #minSeats + ':' + " +
-                    "#pageable.pageNumber + ':' + #pageable.pageSize"
+                    "#searchTerm + ':' + #minSeats + ':' + #startDate + ':' + #endDate + ':' + " +
+                    "#pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort"
     )
     public PageResponse<EventListDto> searchEvents(
             Event.EventCategory category,
@@ -140,7 +140,7 @@ public class EventService {
      */
     @Cacheable(
             value = CacheConfig.EVENT_LIST_CACHE,
-            key = "'category:' + #category + ':' + #pageable.pageNumber + ':' + #pageable.pageSize"
+            key = "'category:' + #category + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort"
     )
     public PageResponse<EventListDto> getEventsByCategory(
             Event.EventCategory category,
@@ -157,7 +157,7 @@ public class EventService {
      */
     @Cacheable(
             value = CacheConfig.EVENT_LIST_CACHE,
-            key = "'venue:' + #venueId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize"
+            key = "'venue:' + #venueId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort"
     )
     public PageResponse<EventListDto> getEventsByVenue(
             Long venueId,
@@ -174,7 +174,7 @@ public class EventService {
      */
     @Cacheable(
             value = CacheConfig.EVENT_LIST_CACHE,
-            key = "'city:' + #city + ':' + #pageable.pageNumber + ':' + #pageable.pageSize"
+            key = "'city:' + #city + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort"
     )
     public PageResponse<EventListDto> getEventsByCity(
             String city,
@@ -192,7 +192,7 @@ public class EventService {
     @Cacheable(
             value = CacheConfig.EVENT_LIST_CACHE,
             key = "'daterange:' + #startDate + ':' + #endDate + ':' + " +
-                    "#pageable.pageNumber + ':' + #pageable.pageSize"
+                    "#pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort"
     )
     public PageResponse<EventListDto> getEventsByDateRange(
             LocalDateTime startDate,
@@ -212,7 +212,7 @@ public class EventService {
      */
     @Cacheable(
             value = CacheConfig.EVENT_LIST_CACHE,
-            key = "'search:' + #searchTerm + ':' + #pageable.pageNumber + ':' + #pageable.pageSize"
+            key = "'search:' + #searchTerm + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort"
     )
     public PageResponse<EventListDto> searchEventsByName(
             String searchTerm,
