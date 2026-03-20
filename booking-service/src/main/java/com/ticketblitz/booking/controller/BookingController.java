@@ -19,6 +19,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @Slf4j
 @RequestMapping("/api/v1/bookings")
@@ -33,6 +35,15 @@ public class BookingController {
     // default pagination
     private static final int  DEFAULT_PAGE = 0;
     private static final int  PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
+    private static final Map<String, String> SORT_FIELD_MAPPING = Map.of(
+            "createdAt", "createdAt",
+            "eventDate", "eventDate",
+            "status", "status",
+            "totalAmount", "amount",
+            "amount", "amount",
+            "totalSeats", "totalSeats"
+    );
 
     /**
      * create new booking
@@ -130,6 +141,10 @@ public class BookingController {
 
         log.info("GET /api/v1/bookings - User: {}, Page: {}", userId, page);
 
+        page = Math.max(DEFAULT_PAGE, page);
+        size = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
+        sortBy = SORT_FIELD_MAPPING.getOrDefault(sortBy, "createdAt");
+
         Sort sort = sortDir.equalsIgnoreCase("DESC")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
@@ -210,11 +225,16 @@ public class BookingController {
                     ApiResponse.success(payment)
             );
 
-        } catch (IllegalArgumentException | IllegalStateException e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(
                             String.valueOf(HttpStatus.BAD_REQUEST.value()),e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error(
+                            String.valueOf(HttpStatus.CONFLICT.value()),e.getMessage()));
         }
     }
 
