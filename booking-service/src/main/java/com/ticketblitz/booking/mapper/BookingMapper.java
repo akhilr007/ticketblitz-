@@ -13,6 +13,7 @@ import java.util.List;
 
 @Mapper(
         componentModel = "spring",
+        builder = @Builder(disableBuilder = true),
         unmappedTargetPolicy = ReportingPolicy.IGNORE,
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
 )
@@ -22,12 +23,14 @@ public interface BookingMapper {
      * Entity -> Full dto with computed fields
      * @return BookingDto
      */
+    @Mapping(source = "amount", target = "totalAmount")
     BookingDto toDto(Booking booking);
 
     /**
      * Entity -> list dto (lightweight)
      * @return BookingListDto
      */
+    @Mapping(source = "amount", target = "totalAmount")
     BookingListDto toListDto(Booking booking);
 
     /**
@@ -47,8 +50,8 @@ public interface BookingMapper {
      */
     @AfterMapping
     default void calculateComputedFields(
-            @MappingTarget BookingDto dto,
-            Booking booking
+            Booking booking,
+            @MappingTarget BookingDto dto
     ) {
         // calculate seconds until expiry
         if (booking.getExpiresAt() != null) {
