@@ -72,19 +72,13 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     /**
      * find user's booking (paginated)
      */
-    @Query("SELECT b FROM Booking b WHERE b.userId = :userId ORDER BY b.createdAt DESC")
+    @Query("SELECT b FROM Booking b WHERE b.userId = :userId")
     Page<Booking> findByUserId(@Param("userId") String userId, Pageable pageable);
 
-    /**
-     * find expired bookings (for cleanup job)
-     *
-     * SCHEDULED TASK: runs every 5 minutes
-     * finds bookings that expired but still pending
-     */
-    @Query("SELECT b FROM Booking b " +
-            "WHERE b.status = 'PENDING' "+
+    @Query("SELECT b.id FROM Booking b " +
+            "WHERE b.status = 'PENDING' " +
             "AND b.expiresAt < :now")
-    List<Booking> findExpiredBookings(@Param("now") LocalDateTime now);
+    List<Long> findExpiredBookingIds(@Param("now") LocalDateTime now);
 
 
     /**
