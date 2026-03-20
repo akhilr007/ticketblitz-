@@ -8,8 +8,6 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
-import java.util.Locale;
-
 /**
  * Event specification
  *
@@ -52,7 +50,7 @@ public class EventSpecification {
             if (category == null) {
                 return cb.conjunction(); // always true(no filters)
             }
-            return cb.equal(root.get("category"), category);
+            return cb.equal(root.get("eventCategory"), category);
         };
     }
 
@@ -162,14 +160,14 @@ public class EventSpecification {
             if (minPrice != null) {
                 predicate = cb.and(
                         predicate,
-                        cb.greaterThanOrEqualTo(root.get("basePrice"), minPrice)
+                        cb.greaterThanOrEqualTo(root.get("price"), minPrice)
                 );
             }
 
             if (maxPrice != null) {
                 predicate = cb.and(
                         predicate,
-                        cb.lessThanOrEqualTo(root.get("basePrice"), maxPrice)
+                        cb.lessThanOrEqualTo(root.get("price"), maxPrice)
                 );
             }
 
