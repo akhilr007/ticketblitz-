@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -52,11 +53,13 @@ public class EventController {
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_SIZE = 20;
     private static final int MAX_SIZE = 100;
-    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-            "eventDate",
-            "name",
-            "price",
-            "createdAt"
+    private static final Map<String, String> SORT_FIELD_MAPPING = Map.of(
+            "eventDate", "eventDate",
+            "name", "name",
+            "price", "price",
+            "basePrice", "price",
+            "createdAt", "createdAt",
+            "availableSeats", "availableSeats"
     );
 
     /**
@@ -99,12 +102,9 @@ public class EventController {
         log.info("GET /api/v1/events/upcoming?page={}&size={}", page, size);
 
         // Validate and cap page size
-        page = Math.max(0, page);
-        size = Math.min(size, MAX_SIZE);
-
-        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
-            sortBy = "eventDate";
-        }
+        page = normalizePage(page);
+        size = normalizeSize(size);
+        sortBy = resolveSortField(sortBy);
 
         Sort sort = sortDir.equalsIgnoreCase("DESC")
                 ? Sort.by(sortBy).descending()
@@ -157,7 +157,9 @@ public class EventController {
         log.info("GET /api/v1/events/search?category={}&city={}&term={}",
                 category, city, searchTerm);
 
-        size = Math.min(size, MAX_SIZE);
+        page = normalizePage(page);
+        size = normalizeSize(size);
+        sortBy = resolveSortField(sortBy);
         Sort sort = sortDir.equalsIgnoreCase("DESC")
                 ? Sort.by(sortBy).descending()
                 : Sort.by(sortBy).ascending();
@@ -189,7 +191,8 @@ public class EventController {
 
         log.info("GET /api/v1/events/category/{}", category);
 
-        size = Math.min(size, MAX_SIZE);
+        page = normalizePage(page);
+        size = normalizeSize(size);
         Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").ascending());
 
         PageResponse<EventListDto> events = eventService.getEventsByCategory(category, pageable);
@@ -215,7 +218,8 @@ public class EventController {
 
         log.info("GET /api/v1/events/venue/{}", venueId);
 
-        size = Math.min(size, MAX_SIZE);
+        page = normalizePage(page);
+        size = normalizeSize(size);
         Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").ascending());
 
         PageResponse<EventListDto> events = eventService.getEventsByVenue(venueId, pageable);
@@ -241,7 +245,8 @@ public class EventController {
 
         log.info("GET /api/v1/events/city/{}", city);
 
-        size = Math.min(size, MAX_SIZE);
+        page = normalizePage(page);
+        size = normalizeSize(size);
         Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").ascending());
 
         PageResponse<EventListDto> events = eventService.getEventsByCity(city, pageable);
@@ -268,5 +273,17 @@ public class EventController {
         return ResponseEntity.ok(
                 ApiResponse.success(count)
         );
+    }
+
+    private int normalizePage(int page) {
+        return Math.max(DEFAULT_PAGE, page);
+    }
+
+    private int normalizeSize(int size) {
+        return Math.max(1, Math.min(size, MAX_SIZE));
+    }
+
+    private String resolveSortField(String sortBy) {
+        return SORT_FIELD_MAPPING.getOrDefault(sortBy, "eventDate");
     }
 }

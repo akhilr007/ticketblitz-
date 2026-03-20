@@ -1,11 +1,13 @@
 package com.ticketblitz.catalog.controller;
 
 import com.ticketblitz.catalog.dto.SeatDto;
+import com.ticketblitz.catalog.dto.SeatOperationRequest;
 import com.ticketblitz.catalog.service.SeatService;
 import com.ticketblitz.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -159,6 +161,59 @@ public class SeatController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(sections)
+        );
+    }
+
+    @Operation(summary = "Get selected seats", description = "Retrieve a specific seat set for booking validation")
+    @GetMapping("/event/{eventId}/selected")
+    public ResponseEntity<ApiResponse<List<SeatDto>>> getSeatsByIds(
+            @Parameter(description = "Event ID")
+            @PathVariable Long eventId,
+            @RequestParam List<Long> seatIds) {
+
+        log.info("GET /api/v1/seats/event/{}/selected - {} seats", eventId, seatIds.size());
+
+        return ResponseEntity.ok(
+                ApiResponse.success(seatService.getSeatsByEventAndIds(eventId, seatIds))
+        );
+    }
+
+    @Operation(summary = "Lock seats", description = "Internal endpoint to reserve seats before payment")
+    @PostMapping("/event/{eventId}/lock")
+    public ResponseEntity<ApiResponse<List<SeatDto>>> lockSeats(
+            @PathVariable Long eventId,
+            @Valid @RequestBody SeatOperationRequest request) {
+
+        log.info("POST /api/v1/seats/event/{}/lock - {} seats", eventId, request.getSeatIds().size());
+
+        return ResponseEntity.ok(
+                ApiResponse.success(seatService.lockSeats(eventId, request.getSeatIds()))
+        );
+    }
+
+    @Operation(summary = "Book seats", description = "Internal endpoint to confirm locked seats")
+    @PostMapping("/event/{eventId}/book")
+    public ResponseEntity<ApiResponse<List<SeatDto>>> bookSeats(
+            @PathVariable Long eventId,
+            @Valid @RequestBody SeatOperationRequest request) {
+
+        log.info("POST /api/v1/seats/event/{}/book - {} seats", eventId, request.getSeatIds().size());
+
+        return ResponseEntity.ok(
+                ApiResponse.success(seatService.bookSeats(eventId, request.getSeatIds()))
+        );
+    }
+
+    @Operation(summary = "Release seats", description = "Internal endpoint to release locked seats")
+    @PostMapping("/event/{eventId}/release")
+    public ResponseEntity<ApiResponse<List<SeatDto>>> releaseSeats(
+            @PathVariable Long eventId,
+            @Valid @RequestBody SeatOperationRequest request) {
+
+        log.info("POST /api/v1/seats/event/{}/release - {} seats", eventId, request.getSeatIds().size());
+
+        return ResponseEntity.ok(
+                ApiResponse.success(seatService.releaseSeats(eventId, request.getSeatIds()))
         );
     }
 }
