@@ -6,9 +6,9 @@ spring:
   # DATABASE CONFIGURATION
   #============================================================================
   datasource:
-    url: jdbc:postgresql://localhost:5432/ticketblitz_catalog
-    username: ticketblitz
-    password: ticketblitz_password
+    url: ${CATALOG_DB_URL:jdbc:postgresql://localhost:5432/ticketblitz_catalog}
+    username: ${POSTGRES_USER:ticketblitz}
+    password: ${POSTGRES_PASSWORD:ticketblitz_password}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -44,8 +44,8 @@ spring:
   #============================================================================
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
       timeout: 2000ms
       lettuce:
         pool:
