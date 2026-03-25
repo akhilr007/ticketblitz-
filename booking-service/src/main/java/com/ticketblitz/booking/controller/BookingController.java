@@ -66,25 +66,11 @@ public class BookingController {
         log.info("POST /api/v1/bookings - User: {}, Event: {}",
                 userId, request.getEventId());
 
-        try {
-            BookingDto booking = bookingService.createBooking(userId, request);
+        BookingDto booking = bookingService.createBooking(userId, request);
 
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(ApiResponse.success(booking));
-        }
-        catch (IllegalArgumentException e) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(
-                            String.valueOf(HttpStatus.BAD_REQUEST.value()),e.getMessage()));
-
-        } catch (IllegalStateException e) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body(ApiResponse.error(
-                            String.valueOf(HttpStatus.CONFLICT.value()),e.getMessage()));
-        }
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.success(booking));
     }
 
     /**
@@ -100,29 +86,20 @@ public class BookingController {
 
         log.info("GET /api/v1/bookings/{} - User: {}", id, userId);
 
-        try {
-            BookingDto booking = bookingService.getBooking(id);
+        BookingDto booking = bookingService.getBooking(id);
 
-            // Verify ownership
-            if (!booking.getUserId().equals(userId)) {
-                return ResponseEntity
-                        .status(HttpStatus.FORBIDDEN)
-                        .body(ApiResponse.error(
-                                String.valueOf(HttpStatus.FORBIDDEN.value()),
-                                "Access denied"));
-            }
-
-            return ResponseEntity.ok(
-                    ApiResponse.success(booking)
-            );
-
-        } catch (IllegalArgumentException e) {
+        // Verify ownership
+        if (!booking.getUserId().equals(userId)) {
             return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
+                    .status(HttpStatus.FORBIDDEN)
                     .body(ApiResponse.error(
-                            String.valueOf(HttpStatus.NOT_FOUND.value()),
-                            e.getMessage()));
+                            String.valueOf(HttpStatus.FORBIDDEN.value()),
+                            "Access denied"));
         }
+
+        return ResponseEntity.ok(
+                ApiResponse.success(booking)
+        );
     }
 
     /**
@@ -170,25 +147,11 @@ public class BookingController {
 
         log.info("DELETE /api/v1/bookings/{} - User: {}", id, userId);
 
-        try {
-            BookingDto booking = bookingService.cancelBooking(id, userId);
+        BookingDto booking = bookingService.cancelBooking(id, userId);
 
-            return ResponseEntity.ok(
-                    ApiResponse.success(booking)
-            );
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(ApiResponse.error(
-                            String.valueOf(HttpStatus.BAD_REQUEST.value()),e.getMessage()));
-
-        } catch (IllegalStateException e) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body(ApiResponse.error(
-                            String.valueOf(HttpStatus.CONFLICT.value()),e.getMessage()));
-        }
+        return ResponseEntity.ok(
+                ApiResponse.success(booking)
+        );
     }
 
     /**
@@ -208,34 +171,21 @@ public class BookingController {
 
         log.info("POST /api/v1/bookings/{}/pay - User: {}", id, userId);
 
-        try {
-            // Verify booking ownership first
-            BookingDto booking = bookingService.getBooking(id);
-            if (!booking.getUserId().equals(userId)) {
-                return ResponseEntity
-                        .status(HttpStatus.FORBIDDEN)
-                        .body(ApiResponse.error(
-                                String.valueOf(HttpStatus.FORBIDDEN.value()),
-                                "Access denied"));
-            }
-
-            PaymentDto payment = paymentService.processPayment(id, request);
-
-            return ResponseEntity.ok(
-                    ApiResponse.success(payment)
-            );
-
-        } catch (IllegalArgumentException e) {
+        // Verify booking ownership first
+        BookingDto booking = bookingService.getBooking(id);
+        if (!booking.getUserId().equals(userId)) {
             return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
+                    .status(HttpStatus.FORBIDDEN)
                     .body(ApiResponse.error(
-                            String.valueOf(HttpStatus.BAD_REQUEST.value()),e.getMessage()));
-        } catch (IllegalStateException e) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body(ApiResponse.error(
-                            String.valueOf(HttpStatus.CONFLICT.value()),e.getMessage()));
+                            String.valueOf(HttpStatus.FORBIDDEN.value()),
+                            "Access denied"));
         }
+
+        PaymentDto payment = paymentService.processPayment(id, request);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(payment)
+        );
     }
 
     /**
@@ -251,28 +201,20 @@ public class BookingController {
 
         log.info("GET /api/v1/bookings/{}/payment - User: {}", id, userId);
 
-        try {
-            // Verify ownership
-            BookingDto booking = bookingService.getBooking(id);
-            if (!booking.getUserId().equals(userId)) {
-                return ResponseEntity
-                        .status(HttpStatus.FORBIDDEN)
-                        .body(ApiResponse.error(
-                                String.valueOf(HttpStatus.FORBIDDEN.value()),
-                                "Access denied"));
-            }
-
-            PaymentDto payment = paymentService.getPaymentForBooking(id);
-
-            return ResponseEntity.ok(
-                    ApiResponse.success(payment)
-            );
-
-        } catch (IllegalArgumentException e) {
+        // Verify ownership
+        BookingDto booking = bookingService.getBooking(id);
+        if (!booking.getUserId().equals(userId)) {
             return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
+                    .status(HttpStatus.FORBIDDEN)
                     .body(ApiResponse.error(
-                            String.valueOf(HttpStatus.NOT_FOUND.value()),e.getMessage()));
+                            String.valueOf(HttpStatus.FORBIDDEN.value()),
+                            "Access denied"));
         }
+
+        PaymentDto payment = paymentService.getPaymentForBooking(id);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(payment)
+        );
     }
 }
