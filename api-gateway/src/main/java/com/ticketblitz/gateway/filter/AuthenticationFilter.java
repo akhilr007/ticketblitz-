@@ -59,7 +59,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 log.info("Authenticated user: {} with roles: {}", username, roles);
 
                 ServerHttpRequest modifiedRequest = request.mutate()
-                        .header("X-User-Email", username)
+                        .header("X-User-Id", username)
                         .header("X-User-Roles", String.join(", ", roles))
                         .build();
 

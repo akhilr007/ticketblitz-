@@ -13,12 +13,12 @@ public class RateLimitConfig {
     @Bean
     public KeyResolver userKeyResolver() {
         return exchange -> {
-            String userEmail = exchange.getRequest()
+            String userId = exchange.getRequest()
                     .getHeaders()
-                    .getFirst("X-User-Email");
+                    .getFirst("X-User-Id");
 
-            if (userEmail != null && !userEmail.isEmpty()) {
-                return Mono.just(userEmail);
+            if (userId != null && !userId.isEmpty()) {
+                return Mono.just(userId);
             }
 
             String clientIp = exchange.getRequest()
