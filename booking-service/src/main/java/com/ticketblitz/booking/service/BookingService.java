@@ -144,34 +144,50 @@ public class BookingService {
     ) {
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(reservationTimeoutMinutes);
 
-        Booking booking = Booking.builder()
-                .userId(userId)
-                .eventId(request.getEventId())
-                .eventName(event.name())
-                .venueName(extractVenueName(event))
-                .eventDate(event.eventDate())
-                .status(BookingStatus.PENDING)
-                .amount(totalAmount)
-                .totalSeats(seats.size())
-                .idempotencyKey(request.getIdempotencyKey())
-                .expiresAt(expiresAt)
-                .build();
-
-        for (CatalogServiceClient.SeatInfo seat : seats) {
-            booking.addItem(BookingItem.builder()
-                    .seatId(seat.id())
-                    .section(seat.section())
-                    .rowLabel(seat.rowLabel())
-                    .seatNumber(seat.seatNumber())
-                    .price(seat.price())
-                    .build());
-        }
-
-        booking = bookingRepository.save(booking);
+        // 1. Lock seats in catalog FIRST (remote call — most likely to fail)
         seatLockingService.lockSeatsInCatalog(request.getEventId(), requestedSeatIds);
 
-        log.info("Booking created: {}, expires at: {}", booking.getId(), expiresAt);
-        return bookingMapper.toDto(booking);
+        try {
+            // 2. Persist booking only after seats are locked
+            Booking booking = Booking.builder()
+                    .userId(userId)
+                    .eventId(request.getEventId())
+                    .eventName(event.name())
+                    .venueName(extractVenueName(event))
+                    .eventDate(event.eventDate())
+                    .status(BookingStatus.PENDING)
+                    .amount(totalAmount)
+                    .totalSeats(seats.size())
+                    .idempotencyKey(request.getIdempotencyKey())
+                    .expiresAt(expiresAt)
+                    .build();
+
+            for (CatalogServiceClient.SeatInfo seat : seats) {
+                booking.addItem(BookingItem.builder()
+                        .seatId(seat.id())
+                        .section(seat.section())
+                        .rowLabel(seat.rowLabel())
+                        .seatNumber(seat.seatNumber())
+                        .price(seat.price())
+                        .build());
+            }
+
+            booking = bookingRepository.save(booking);
+
+            log.info("Booking created: {}, expires at: {}", booking.getId(), expiresAt);
+            return bookingMapper.toDto(booking);
+        } catch (Exception ex) {
+            // Compensation: release the seats we just locked if DB save fails
+            log.error("Failed to persist booking after locking seats, releasing seats for event: {}",
+                    request.getEventId(), ex);
+            try {
+                seatLockingService.releaseSeatsInCatalog(request.getEventId(), requestedSeatIds);
+            } catch (Exception releaseEx) {
+                log.error("CRITICAL: Failed to release seats during compensation for event: {}. " +
+                        "Manual intervention required.", request.getEventId(), releaseEx);
+            }
+            throw ex;
+        }
     }
 
     private CatalogServiceClient.EventInfo getActiveEvent(Long eventId) {
