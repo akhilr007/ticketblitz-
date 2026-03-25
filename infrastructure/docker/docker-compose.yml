@@ -100,6 +100,107 @@ services:
       - ticketblitz-network
     restart: unless-stopped
 
+  #============================================================================
+  # SERVICE REGISTRY (EUREKA)
+  #============================================================================
+  service-registry:
+    build:
+      context: ../../service-registry
+      dockerfile: Dockerfile
+    container_name: ticketblitz-service-registry
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    networks:
+      - ticketblitz-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  #============================================================================
+  # CATALOG SERVICE
+  #============================================================================
+  catalog-service:
+    build:
+      context: ../../catalog-service
+      dockerfile: Dockerfile
+    container_name: ticketblitz-catalog
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-ticketblitz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticketblitz_password}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+    networks:
+      - ticketblitz-network
+    restart: unless-stopped
+
+  #============================================================================
+  # BOOKING SERVICE
+  #============================================================================
+  booking-service:
+    build:
+      context: ../../booking-service
+      dockerfile: Dockerfile
+    container_name: ticketblitz-booking
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-ticketblitz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticketblitz_password}
+      RABBITMQ_USER: ${RABBITMQ_USER:-ticketblitz}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-ticketblitz-password}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+    networks:
+      - ticketblitz-network
+    restart: unless-stopped
+
+  #============================================================================
+  # API GATEWAY
+  #============================================================================
+  api-gateway:
+    build:
+      context: ../../api-gateway
+      dockerfile: Dockerfile
+    container_name: ticketblitz-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JWT_SECRET: ${JWT_SECRET}
+      POSTGRES_USER: ${POSTGRES_USER:-ticketblitz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticketblitz_password}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+    networks:
+      - ticketblitz-network
+    restart: unless-stopped
+
 #==============================================================================
 # NETWORKS
 #==============================================================================
