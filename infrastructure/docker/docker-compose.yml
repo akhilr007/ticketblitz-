@@ -30,9 +30,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: ticketblitz
-      POSTGRES_USER: ticketblitz
-      POSTGRES_PASSWORD: ticketblitz_password
+      POSTGRES_DB: ${POSTGRES_DB:-ticketblitz}
+      POSTGRES_USER: ${POSTGRES_USER:-ticketblitz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticketblitz_password}
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d
@@ -54,8 +54,8 @@ services:
       - "5672:5672"   # AMQP port
       - "15672:15672" # Management UI
     environment:
-      RABBITMQ_DEFAULT_USER: ticketblitz
-      RABBITMQ_DEFAULT_PASSWORD: ticketblitz-password
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-ticketblitz}
+      RABBITMQ_DEFAULT_PASSWORD: ${RABBITMQ_PASSWORD:-ticketblitz-password}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
@@ -92,8 +92,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
     volumes:
       - grafana-data:/var/lib/grafana
     networks:
