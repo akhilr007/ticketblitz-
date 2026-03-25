@@ -1,11 +1,11 @@
 spring:
 
   r2dbc:
-    url: r2dbc:postgresql://localhost:5432/ticketblitz_users
+    url: ${GATEWAY_R2DBC_URL:r2dbc:postgresql://localhost:5432/ticketblitz_users}
     username: ${POSTGRES_USER:ticketblitz}
     password: ${POSTGRES_PASSWORD:ticketblitz_password}
   flyway:
-    url: jdbc:postgresql://localhost:5432/ticketblitz_users
+    url: ${GATEWAY_DB_URL:jdbc:postgresql://localhost:5432/ticketblitz_users}
     user: ${POSTGRES_USER:ticketblitz}
     password: ${POSTGRES_PASSWORD:ticketblitz_password}
     enabled: true
@@ -19,8 +19,8 @@ spring:
   # Redis Configuration (UNCOMMENTED NOW!)
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
       password:  # Leave empty for no password
       timeout: 2000ms
       lettuce:
@@ -169,6 +169,6 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 jwt:
-  secret: ${JWT_SECRET:ticketblitz-secret-key-change-in-production-min-256-bits-for-security}
+  secret: ${JWT_SECRET}
   access-token-expiration: 900000
   refresh-token-expiration: 604800000
