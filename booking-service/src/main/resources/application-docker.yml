@@ -1,0 +1,20 @@
+# Docker profile overrides - all hosts point to Docker Compose service names
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/ticketblitz_booking
+  data:
+    redis:
+      host: redis
+  rabbitmq:
+    host: rabbitmq
+
+redisson:
+  single-server-config:
+    address: redis://redis:6379
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://service-registry:8761/eureka/
+  instance:
+    prefer-ip-address: true
