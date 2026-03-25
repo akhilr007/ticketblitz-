@@ -1,0 +1,7 @@
+# Docker profile overrides - all hosts point to Docker Compose service names
+eureka:
+  instance:
+    hostname: service-registry
+  client:
+    serviceUrl:
+      defaultZone: http://service-registry:8761/eureka/
