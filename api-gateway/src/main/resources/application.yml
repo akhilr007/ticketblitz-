@@ -60,7 +60,7 @@ spring:
               args:
                 redis-rate-limiter:
                   replenishRate: 20
-                  burstCapacity: 10
+                  burstCapacity: 40
                   requestedTokens: 1
                 key-resolver: "#{@ipKeyResolver}"
 
