@@ -130,7 +130,7 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error(
                         String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
-                        "An unexpected error occurred. Please try again later."
+                        "An unexpected error occurred: " + ex.getClass().getName() + " - " + ex.getMessage()
                 ));
     }
 }
