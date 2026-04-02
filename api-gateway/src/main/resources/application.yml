@@ -16,7 +16,7 @@ spring:
   application:
     name: api-gateway
 
-  # Redis Configuration (UNCOMMENTED NOW!)
+  # Redis Configuration
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -56,7 +56,7 @@ spring:
         - id: catalog-service
           uri: lb://CATALOG-SERVICE
           predicates:
-            - Path=/api/events/**, /api/venues/**
+            - Path=/api/v1/events/**, /api/v1/venues/**
           filters:
             - name: CircuitBreaker
               args:
@@ -74,7 +74,7 @@ spring:
         - id: booking-service
           uri: lb://BOOKING-SERVICE
           predicates:
-              - Path=/api/bookings/**
+              - Path=/api/v1/bookings/**
           filters:
               - AuthenticationFilter
               - name: RequestRateLimiter
@@ -92,7 +92,7 @@ spring:
         - id: fulfillment-service
           uri: lb://FULFILLMENT-SERVICE
           predicates:
-              - Path=/api/tickets/**
+              - Path=/api/v1/tickets/**
           filters:
               - AuthenticationFilter
               - name: CircuitBreaker
