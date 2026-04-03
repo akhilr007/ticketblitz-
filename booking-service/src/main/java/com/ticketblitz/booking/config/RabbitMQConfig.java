@@ -11,11 +11,20 @@ import org.springframework.context.annotation.Configuration;
  *
  * TOPOLOGY:
  * =========
- * Exchange: ticketblitz.exchange (topic)
- *   └─ Routing Key: booking.confirmed
- *        └─ Queue: ticketblitz.booking.confirmed.queue
- *              └─ DLX: ticketblitz.dlx.exchange
- *                   └─ DLQ: ticketblitz.booking.confirmed.dlq
+ * FINAL FLOW:
+ *  ===========
+ *  Exchange: ticketblitz.exchange (topic)
+ *
+ *    └─ booking.confirmed
+ *         └─ Main Queue
+ *               └─ (fail)
+ *                    ↓
+ *               Retry Queue (30s delay)
+ *                    ↓
+ *               back to Main Queue
+ *                    ↓ (fail again)
+ *               DLQ (final)
+ *
  *
  * WHY TOPIC EXCHANGE:
  * ====================
