@@ -4,7 +4,9 @@ echo "🚀 Starting TicketBlitz Infrastructure..."
 
 cd ../docker || exit 1
 
-docker compose up -d
+# Start only infrastructure containers (not application services)
+# Application services should be run locally with: mvn spring-boot:run
+docker compose up -d postgres redis rabbitmq
 
 echo ""
 echo "⏳ Waiting for services to be healthy..."
