@@ -176,6 +176,33 @@ services:
     restart: unless-stopped
 
   #============================================================================
+  # FULFILLMENT SERVICE
+  #============================================================================
+  fulfillment-service:
+    build:
+      context: ../../fulfillment-service
+      dockerfile: Dockerfile
+    container_name: ticketblitz-fulfillment
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_USER: ${POSTGRES_USER:-ticketblitz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticketblitz_password}
+      RABBITMQ_USER: ${RABBITMQ_USER:-ticketblitz}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-ticketblitz-password}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+    networks:
+      - ticketblitz-network
+    restart: unless-stopped
+
+  #============================================================================
   # API GATEWAY
   #============================================================================
   api-gateway:
