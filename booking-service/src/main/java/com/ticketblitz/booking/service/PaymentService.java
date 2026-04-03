@@ -82,6 +82,7 @@ public class PaymentService {
     private final SeatLockingService seatLockingService;
     private final PaymentMapper paymentMapper;
     private final DistributedLockService lockService;
+    private final BookingEventPublisher eventPublisher;
 
     @Value("${booking.payment.mock-enabled:true}")
     private boolean mockEnabled;
@@ -179,7 +180,8 @@ public class PaymentService {
                     bookingId
             );
 
-            // TODO: Publish booking confirmed event to RabbitMQ
+            // Publish booking confirmed event to RabbitMQ → fulfillment-service
+            eventPublisher.publishBookingConfirmed(booking);
 
         } else {
             // Payment failed
