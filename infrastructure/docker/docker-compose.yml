@@ -272,7 +272,7 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-ticketblitz_super_secret_jwt_key_at_least_32_chars}
       POSTGRES_USER: ${POSTGRES_USER:-ticketblitz}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticketblitz_password}
       ZIPKIN_URL: http://tempo:9411/api/v2/spans

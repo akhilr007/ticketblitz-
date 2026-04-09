@@ -1,5 +1,7 @@
 spring:
-
+  threads:
+    virtual:
+      enabled: true
   r2dbc:
     url: ${GATEWAY_R2DBC_URL:r2dbc:postgresql://localhost:5432/ticketblitz_users}
     username: ${POSTGRES_USER:ticketblitz}
@@ -65,8 +67,8 @@ spring:
             - name: RequestRateLimiter
               args:
                 redis-rate-limiter:
-                  replenishRate: 20
-                  burstCapacity: 40
+                  replenishRate: 5000
+                  burstCapacity: 10000
                   requestedTokens: 1
                 key-resolver: "#{@ipKeyResolver}"
 
@@ -80,8 +82,8 @@ spring:
               - name: RequestRateLimiter
                 args:
                   redis-rate-limiter:
-                    replenishRate: 10
-                    burstCapacity: 20
+                    replenishRate: 5000
+                    burstCapacity: 10000
                     requestedTokens: 1
                   key-resolver: "#{@userKeyResolver}"
               - name: CircuitBreaker

@@ -1,4 +1,7 @@
 spring:
+  threads:
+    virtual:
+      enabled: true
   application:
     name: catalog-service
 
@@ -11,7 +14,7 @@ spring:
     password: ${POSTGRES_PASSWORD:ticketblitz_password}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 50
       minimum-idle: 2
       connection-timeout: 30000
       idle-timeout: 600000
