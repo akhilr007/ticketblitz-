@@ -1,5 +1,6 @@
 package com.ticketblitz.booking.service;
 
+import com.ticketblitz.booking.config.BookingMetrics;
 import com.ticketblitz.booking.dto.PaymentDto;
 import com.ticketblitz.booking.dto.PaymentRequest;
 import com.ticketblitz.booking.entity.Booking;
@@ -83,6 +84,7 @@ public class PaymentService {
     private final PaymentMapper paymentMapper;
     private final DistributedLockService lockService;
     private final BookingEventPublisher eventPublisher;
+    private final BookingMetrics metrics;
 
     @Value("${booking.payment.mock-enabled:true}")
     private boolean mockEnabled;
@@ -103,7 +105,14 @@ public class PaymentService {
         // Use distributed lock to prevent duplicate payment processing
         return lockService.executeWithLock(
                 buildPaymentLockKey(bookingId),
-                () -> doProcessPayment(bookingId, request)
+                () -> {
+                    io.micrometer.core.instrument.Timer.Sample timerSample = metrics.startPaymentTimer();
+                    try {
+                        return doProcessPayment(bookingId, request);
+                    } finally {
+                        metrics.stopPaymentTimer(timerSample);
+                    }
+                }
         );
     }
 
@@ -169,6 +178,8 @@ public class PaymentService {
             log.info("Payment successful for booking: {}, transaction: {}",
                     bookingId, transactionId);
 
+            metrics.incrementPaymentsSucceeded();
+
             // Update seats in catalog (LOCKED → BOOKED)
             List<Long> seatIds = booking.getItems().stream()
                     .map(BookingItem::getSeatId)
@@ -189,6 +200,8 @@ public class PaymentService {
             booking.fail();
 
             log.warn("Payment failed for booking: {}", bookingId);
+
+            metrics.incrementPaymentsFailed();
 
             // Release seats
             List<Long> seatIds = booking.getItems().stream()

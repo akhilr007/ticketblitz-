@@ -2,6 +2,7 @@ package com.ticketblitz.fulfillment.service;
 
 import com.ticketblitz.common.constant.TicketStatus;
 import com.ticketblitz.common.event.BookingConfirmedEvent;
+import com.ticketblitz.fulfillment.config.FulfillmentMetrics;
 import com.ticketblitz.fulfillment.entity.Ticket;
 import com.ticketblitz.fulfillment.repository.TicketRepository;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,7 @@ import java.util.UUID;
 public class TicketGenerationService {
 
     private final TicketRepository ticketRepository;
+    private final FulfillmentMetrics metrics;
 
     /**
      * Generate tickets for a confirmed booking.
@@ -70,8 +72,11 @@ public class TicketGenerationService {
         if (ticketRepository.existsByBookingId(event.getBookingId())) {
             log.info("Tickets already exist for booking: {}. Skipping generation (idempotent).",
                     event.getBookingId());
+            metrics.incrementDuplicatesSkipped();
             return ticketRepository.findByBookingId(event.getBookingId());
         }
+
+        io.micrometer.core.instrument.Timer.Sample timerSample = metrics.startGenerationTimer();
 
         List<Ticket> tickets = new ArrayList<>(event.getSeats().size());
 
@@ -101,6 +106,9 @@ public class TicketGenerationService {
         }
 
         List<Ticket> savedTickets = ticketRepository.saveAll(tickets);
+
+        metrics.stopGenerationTimer(timerSample);
+        metrics.incrementTicketsGenerated(savedTickets.size());
 
         log.info("Successfully generated {} tickets for booking: {}",
                 savedTickets.size(), event.getBookingId());

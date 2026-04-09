@@ -40,9 +40,9 @@ User → API Gateway → Service Registry (Eureka)
 - ✅ **Service Discovery** (Eureka)
 - ✅ **API Gateway** (Spring Cloud Gateway)
 - ✅ **Circuit Breaker** (Resilience4j)
-- ✅ **Saga Pattern** (Choreography-based)
+- ✅ **Distributed Data Consistency** (Synchronous/Async Compensation)
 - ✅ **Event-Driven Architecture** (RabbitMQ)
-- ✅ **CQRS** (Read/Write separation)
+- ✅ **Service-Level Read/Write Separation** (Catalog reads, Booking writes)
 - ✅ **Database per Service**
 - ✅ **Distributed Locking** (Redis)
 - ✅ **Bulkhead Pattern** (Thread pool isolation)
@@ -54,6 +54,13 @@ User → API Gateway → Service Registry (Eureka)
 - Java 17+
 - Maven 3.6+
 - Docker & Docker Compose
+
+### Environment Variables
+Before running the services, ensure you have set the following environment variables:
+```bash
+export JWT_SECRET=your_super_secret_jwt_key_at_least_32_chars
+export POSTGRES_PASSWORD=ticketblitz_password
+```
 
 ### Build & Run
 ```bash
@@ -77,6 +84,27 @@ cd fulfillment-service && mvn spring-boot:run
 - **API Gateway**: http://localhost:8080
 - **API Docs (Swagger)**: http://localhost:8080/swagger-ui.html
 - **Grafana**: http://localhost:3000
+
+### Sample API Requests
+```bash
+# 1. View active events via Catalog Service
+curl -X GET http://localhost:8080/api/v1/events
+
+# 2. Book a ticket (Requires JWT Auth via API Gateway)
+curl -X POST http://localhost:8080/api/v1/bookings \
+  -H "Authorization: Bearer <YOUR_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "eventId": 1,
+    "seatIds": [101, 102],
+    "idempotencyKey": "uuid-1234-5678"
+  }'
+```
+
+### Troubleshooting
+- **Connection Refused (Postgres/Redis/RabbitMQ)**: Ensure Docker containers are fully up (`docker ps`).
+- **Services de-registering from Eureka**: Ensure you allocate enough RAM to Docker, or simply restart the affected service.
+- **Unauthorized (401)**: Did you pass the `Bearer` token in the header and set `JWT_SECRET`?
 
 ## 📊 Key Features
 

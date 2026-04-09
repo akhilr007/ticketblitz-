@@ -55,7 +55,7 @@ services:
       - "15672:15672" # Management UI
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-ticketblitz}
-      RABBITMQ_DEFAULT_PASSWORD: ${RABBITMQ_PASSWORD:-ticketblitz-password}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-ticketblitz-password}
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     networks:
@@ -66,9 +66,12 @@ services:
       timeout: 10s
       retries: 5
     restart: unless-stopped
+
   #============================================================================
-  # PROMETHEUS - Metrics Collection
+  # OBSERVABILITY STACK
   #============================================================================
+
+  #--- PROMETHEUS - Metrics Collection ---
   prometheus:
     image: prom/prometheus:latest
     container_name: ticketblitz-prometheus
@@ -80,12 +83,58 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-remote-write-receiver'
     networks:
       - ticketblitz-network
     restart: unless-stopped
-  #============================================================================
-  # GRAFANA - Metrics Visualization
-  #============================================================================
+
+  #--- TEMPO - Distributed Tracing ---
+  tempo:
+    image: grafana/tempo:2.3.1
+    container_name: ticketblitz-tempo
+    ports:
+      - "3200:3200"   # Tempo HTTP API
+      - "9411:9411"   # Zipkin receiver (services send spans here)
+    volumes:
+      - ./tempo.yml:/etc/tempo/tempo.yml
+      - tempo-data:/tmp/tempo
+    command:
+      - '-config.file=/etc/tempo/tempo.yml'
+    networks:
+      - ticketblitz-network
+    restart: unless-stopped
+
+  #--- LOKI - Log Aggregation ---
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: ticketblitz-loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yml:/etc/loki/loki-config.yml
+      - loki-data:/loki
+    command:
+      - '-config.file=/etc/loki/loki-config.yml'
+    networks:
+      - ticketblitz-network
+    restart: unless-stopped
+
+  #--- PROMTAIL - Log Shipper ---
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: ticketblitz-promtail
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/promtail-config.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - '-config.file=/etc/promtail/promtail-config.yml'
+    depends_on:
+      - loki
+    networks:
+      - ticketblitz-network
+    restart: unless-stopped
+
+  #--- GRAFANA - Unified Observability Dashboard ---
   grafana:
     image: grafana/grafana:latest
     container_name: ticketblitz-grafana
@@ -94,8 +143,14 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_FEATURE_TOGGLES_ENABLE=traceToMetrics
     volumes:
       - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
     networks:
       - ticketblitz-network
     restart: unless-stopped
@@ -135,6 +190,7 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       POSTGRES_USER: ${POSTGRES_USER:-ticketblitz}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticketblitz_password}
+      ZIPKIN_URL: http://tempo:9411/api/v2/spans
     depends_on:
       postgres:
         condition: service_healthy
@@ -162,6 +218,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticketblitz_password}
       RABBITMQ_USER: ${RABBITMQ_USER:-ticketblitz}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-ticketblitz-password}
+      ZIPKIN_URL: http://tempo:9411/api/v2/spans
     depends_on:
       postgres:
         condition: service_healthy
@@ -191,6 +248,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticketblitz_password}
       RABBITMQ_USER: ${RABBITMQ_USER:-ticketblitz}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-ticketblitz-password}
+      ZIPKIN_URL: http://tempo:9411/api/v2/spans
     depends_on:
       postgres:
         condition: service_healthy
@@ -217,6 +275,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       POSTGRES_USER: ${POSTGRES_USER:-ticketblitz}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ticketblitz_password}
+      ZIPKIN_URL: http://tempo:9411/api/v2/spans
     depends_on:
       postgres:
         condition: service_healthy
@@ -244,3 +303,5 @@ volumes:
   rabbitmq-data:
   prometheus-data:
   grafana-data:
+  tempo-data:
+  loki-data:

@@ -64,6 +64,22 @@
         <artifactId>micrometer-registry-prometheus</artifactId>
     </dependency>
 
+    <!-- Distributed Tracing -->
+    <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-tracing-bridge-otel</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-exporter-zipkin</artifactId>
+    </dependency>
+
+    <!-- Structured Logging -->
+    <dependency>
+        <groupId>net.logstash.logback</groupId>
+        <artifactId>logstash-logback-encoder</artifactId>
+    </dependency>
+
     <!-- Common Module -->
     <dependency>
         <groupId>com.ticketblitz</groupId>

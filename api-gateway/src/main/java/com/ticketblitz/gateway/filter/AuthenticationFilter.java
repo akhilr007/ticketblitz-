@@ -1,5 +1,6 @@
 package com.ticketblitz.gateway.filter;
 
+import com.ticketblitz.gateway.config.GatewayMetrics;
 import com.ticketblitz.gateway.util.TokenService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
@@ -17,10 +18,12 @@ import reactor.core.publisher.Mono;
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
 
     private final TokenService tokenService;
+    private final GatewayMetrics gatewayMetrics;
 
-    public AuthenticationFilter(TokenService tokenService) {
+    public AuthenticationFilter(TokenService tokenService, GatewayMetrics gatewayMetrics) {
         super(Config.class);
         this.tokenService = tokenService;
+        this.gatewayMetrics = gatewayMetrics;
     }
 
     public static class Config {
@@ -35,6 +38,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
             if (!request.getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
                 log.warn("Missing Authorization header for: {}", request.getPath());
+                gatewayMetrics.incrementAuthFailureMissingHeader();
                 return onError(exchange, "Authorization header is missing", HttpStatus.UNAUTHORIZED);
             }
 
@@ -42,6 +46,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 log.warn("Invalid Authorization header format for: {}", request.getPath());
+                gatewayMetrics.incrementAuthFailureInvalidFormat();
                 return onError(exchange, "Invalid Authorization header format", HttpStatus.UNAUTHORIZED);
             }
 
@@ -50,6 +55,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
             try{
                 if (!tokenService.validateAccessToken(token)) {
                     log.warn("Invalid or expired token for: {}", request.getPath());
+                    gatewayMetrics.incrementAuthFailureExpiredToken();
                     return onError(exchange, "Invalid or expired token", HttpStatus.UNAUTHORIZED);
                 }
 
@@ -57,6 +63,8 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 var roles = tokenService.extractRoles(token);
 
                 log.info("Authenticated user: {} with roles: {}", username, roles);
+
+                gatewayMetrics.incrementAuthSuccess();
 
                 ServerHttpRequest modifiedRequest = request.mutate()
                         .header("X-User-Id", username)
@@ -66,6 +74,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
                 return chain.filter(exchange.mutate().request(modifiedRequest).build());
             } catch (Exception e) {
                 log.error("Token validation error for: {}", request.getPath(), e);
+                gatewayMetrics.incrementAuthFailureValidationError();
                 return onError(exchange, "Token validation failed: " + e.getMessage(), HttpStatus.UNAUTHORIZED);
             }
         };

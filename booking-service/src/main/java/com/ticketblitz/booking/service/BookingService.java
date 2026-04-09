@@ -1,6 +1,7 @@
 package com.ticketblitz.booking.service;
 
 import com.ticketblitz.booking.client.CatalogServiceClient;
+import com.ticketblitz.booking.config.BookingMetrics;
 import com.ticketblitz.booking.dto.BookingDto;
 import com.ticketblitz.booking.dto.BookingListDto;
 import com.ticketblitz.booking.dto.CreateBookingRequest;
@@ -34,6 +35,7 @@ public class BookingService {
     private final CatalogServiceClient catalogClient;
     private final SeatLockingService seatLockingService;
     private final BookingMapper bookingMapper;
+    private final BookingMetrics metrics;
 
     @Value("${booking.reservation.timeout-minutes:10}")
     private int reservationTimeoutMinutes;
@@ -46,7 +48,12 @@ public class BookingService {
         List<Long> requestedSeatIds = normalizeSeatIds(request.getSeatIds());
         return lockService.executeWithFairLock(
                 buildBookingLockKey(request.getIdempotencyKey()),
-                () -> createBookingWithinIdempotencyLock(userId, request, requestedSeatIds)
+                () -> {
+                    BookingDto result = createBookingWithinIdempotencyLock(userId, request, requestedSeatIds);
+                    metrics.incrementBookingsCreated();
+                    metrics.incrementSeatsLocked(requestedSeatIds.size());
+                    return result;
+                }
         );
     }
 
@@ -92,6 +99,7 @@ public class BookingService {
 
                     seatLockingService.releaseSeatsInCatalog(booking.getEventId(), seatIds);
 
+                    metrics.incrementBookingsCancelled();
                     log.info("Booking cancelled: {}", bookingId);
                     return bookingMapper.toDto(booking);
                 }

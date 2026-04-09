@@ -48,11 +48,15 @@ public class BookingConfirmedListener {
                                        Message message) {
 
         // check retry count from x-death
-        Map<String, Object> headers = message.getMessageProperties().getHeaders();
-        List<Map<String, Object>> xDeath = (List<Map<String, Object>>) headers.get("x-death");
         long retryCount = 0;
-        if (xDeath != null && !xDeath.isEmpty()) {
-            retryCount = (long) xDeath.get(0).get("count");
+        if (message != null && message.getMessageProperties() != null) {
+            Map<String, Object> headers = message.getMessageProperties().getHeaders();
+            if (headers != null) {
+                List<Map<String, Object>> xDeath = (List<Map<String, Object>>) headers.get("x-death");
+                if (xDeath != null && !xDeath.isEmpty()) {
+                    retryCount = (long) xDeath.get(0).get("count");
+                }
+            }
         }
 
         if (retryCount >= 3) {
