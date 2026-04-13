@@ -5,37 +5,59 @@ TicketBlitz uses the **Grafana Observability Stack** (Prometheus + Tempo + Loki)
 ## Architecture
 
 ```mermaid
-graph TB
-    subgraph Services
-        GW[API Gateway :8080]
-        CS[Catalog Service :8081]
-        BS[Booking Service :8082]
-        FS[Fulfillment Service :8083]
-    end
+flowchart LR
 
-    subgraph "Observability Stack"
-        P[Prometheus :9090]
-        T[Tempo :9411]
-        L[Loki :3100]
-        PT[Promtail]
-        G[Grafana :3000]
-    end
+%% ========== USERS ==========
+U[User / Client]
 
-    GW -->|metrics /actuator/prometheus| P
-    CS -->|metrics| P
-    BS -->|metrics| P
-    FS -->|metrics| P
+%% ========== EDGE ==========
+subgraph EDGE["Edge Layer"]
+    GW[API Gateway :8080]
+end
 
-    GW -->|traces Zipkin format| T
-    CS -->|traces| T
-    BS -->|traces| T
-    FS -->|traces| T
+%% ========== SERVICES ==========
+subgraph SERVICES["Microservices Layer"]
+    CS[Catalog Service :8081]
+    BS[Booking Service :8082]
+    FS[Fulfillment Service :8083]
+end
 
-    PT -->|docker logs| L
+%% ========== OBSERVABILITY ==========
+subgraph OBS["Observability Platform"]
+    P[Prometheus\n(Metrics)]
+    T[Tempo\n(Tracing)]
+    L[Loki\n(Logs)]
+    G[Grafana\n(Dashboard)]
+end
 
-    P --> G
-    T --> G
-    L --> G
+%% ========== FLOW: REQUEST ==========
+U --> GW
+GW --> CS
+GW --> BS
+GW --> FS
+
+%% ========== METRICS ==========
+GW --> P
+CS --> P
+BS --> P
+FS --> P
+
+%% ========== TRACES ==========
+GW --> T
+CS --> T
+BS --> T
+FS --> T
+
+%% ========== LOGS ==========
+CS --> L
+BS --> L
+FS --> L
+GW --> L
+
+%% ========== VISUALIZATION ==========
+P --> G
+T --> G
+L --> G
 ```
 
 ## Three Pillars
