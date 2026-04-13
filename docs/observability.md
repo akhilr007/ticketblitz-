@@ -24,10 +24,10 @@ end
 
 %% ========== OBSERVABILITY ==========
 subgraph OBS["Observability Platform"]
-    P[Prometheus\n(Metrics)]
-    T[Tempo\n(Tracing)]
-    L[Loki\n(Logs)]
-    G[Grafana\n(Dashboard)]
+    P[Prometheus<br/>(Metrics)]
+    T[Tempo<br/>(Tracing)]
+    L[Loki<br/>(Logs)]
+    G[Grafana<br/>(Dashboard)]
 end
 
 %% ========== FLOW: REQUEST ==========
