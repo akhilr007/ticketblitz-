@@ -8,26 +8,26 @@ TicketBlitz uses the **Grafana Observability Stack** (Prometheus + Tempo + Loki)
 flowchart LR
 
 %% ========== USERS ==========
-U[User / Client]
+U["User / Client"]
 
 %% ========== EDGE ==========
 subgraph EDGE["Edge Layer"]
-    GW[API Gateway :8080]
+    GW["API Gateway :8080"]
 end
 
 %% ========== SERVICES ==========
 subgraph SERVICES["Microservices Layer"]
-    CS[Catalog Service :8081]
-    BS[Booking Service :8082]
-    FS[Fulfillment Service :8083]
+    CS["Catalog Service :8081"]
+    BS["Booking Service :8082"]
+    FS["Fulfillment Service :8083"]
 end
 
 %% ========== OBSERVABILITY ==========
 subgraph OBS["Observability Platform"]
-    P[Prometheus<br/>(Metrics)]
-    T[Tempo<br/>(Tracing)]
-    L[Loki<br/>(Logs)]
-    G[Grafana<br/>(Dashboard)]
+    P["Prometheus (Metrics)"]
+    T["Tempo (Tracing)"]
+    L["Loki (Logs)"]
+    G["Grafana (Dashboard)"]
 end
 
 %% ========== FLOW: REQUEST ==========
